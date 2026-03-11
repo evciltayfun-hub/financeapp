@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Asset {
+  id        String   @id @default(cuid())
+  symbol    String
+  name      String
+  type      String   // BIST | US | CRYPTO
+  lots      Lot[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([symbol, type])
+}
+
+model Lot {
+  id           String   @id @default(cuid())
+  assetId      String
+  asset        Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  quantity     Float
+  costPriceTL  Float?
+  costPriceUSD Float?
+  purchaseDate DateTime @default(now())
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model MonthlyGoal {
+  id            String   @id @default(cuid())
+  year          Int
+  month         Int
+  incomeTarget  Float    @default(0)
+  savingTarget  Float    @default(0)
+  actualIncome  Float    @default(0)
+  actualExpense Float    @default(0)
+  note          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([year, month])
+}
