@@ -45,38 +45,59 @@ export function computeAssetWithPrice(
   const totalQuantity = asset.lots.reduce((sum, l) => sum + l.quantity, 0);
 
   let totalCostTL = 0;
+  let totalCostUSD = 0;
+
   for (const lot of asset.lots) {
-    if (lot.costPriceTL !== null) {
-      totalCostTL += lot.quantity * lot.costPriceTL;
-    } else if (lot.costPriceUSD !== null) {
-      totalCostTL += lot.quantity * lot.costPriceUSD * usdTry;
+    if (asset.type === "BIST") {
+      const priceTL = lot.costPriceTL ?? 0;
+      totalCostTL += lot.quantity * priceTL;
+      totalCostUSD += usdTry > 0 ? (lot.quantity * priceTL) / usdTry : 0;
+    } else {
+      const priceUSD = lot.costPriceUSD ?? 0;
+      totalCostUSD += lot.quantity * priceUSD;
+      totalCostTL += lot.quantity * priceUSD * usdTry;
     }
   }
 
+  const avgCostTL = totalQuantity > 0 ? totalCostTL / totalQuantity : null;
+  const avgCostUSD = totalQuantity > 0 ? totalCostUSD / totalQuantity : null;
+
   let currentPriceTL: number | null = null;
+  let currentPriceUSD: number | null = null;
   let totalValueTL = 0;
+  let totalValueUSD = 0;
 
   if (currentPrice !== null) {
     if (asset.type === "BIST") {
       currentPriceTL = currentPrice;
+      currentPriceUSD = usdTry > 0 ? currentPrice / usdTry : null;
     } else {
+      currentPriceUSD = currentPrice;
       currentPriceTL = currentPrice * usdTry;
     }
-    totalValueTL = totalQuantity * currentPriceTL;
+    totalValueTL = totalQuantity * (currentPriceTL ?? 0);
+    totalValueUSD = totalQuantity * (currentPriceUSD ?? 0);
   }
 
   const totalProfitTL = totalValueTL - totalCostTL;
+  const totalProfitUSD = totalValueUSD - totalCostUSD;
   const profitPercent = totalCostTL > 0 ? (totalProfitTL / totalCostTL) * 100 : 0;
 
   return {
     ...asset,
     currentPrice,
     currentPriceTL,
+    currentPriceUSD,
     totalCostTL,
+    totalCostUSD,
     totalValueTL,
+    totalValueUSD,
     totalProfitTL,
+    totalProfitUSD,
     profitPercent,
     totalQuantity,
+    avgCostTL,
+    avgCostUSD,
   };
 }
 

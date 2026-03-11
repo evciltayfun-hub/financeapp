@@ -33,16 +33,26 @@ model Lot {
 }
 
 model MonthlyGoal {
-  id            String   @id @default(cuid())
-  year          Int
-  month         Int
-  incomeTarget  Float    @default(0)
-  savingTarget  Float    @default(0)
-  actualIncome  Float    @default(0)
-  actualExpense Float    @default(0)
-  note          String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String   @id @default(cuid())
+  year              Int
+  month             Int
+  // Planlanan
+  netSalary         Float    @default(0)  // Net Maaş (Hesaba Yatan)
+  spendingTarget    Float    @default(0)  // Harcama (Hedef)
+  besInvestment     Float    @default(0)  // BES Yatırımı (Kişisel)
+  investmentTarget  Float    @default(0)  // Yatırıma Kalan (Nakit) = netSalary - spendingTarget - besInvestment
+  // Gerçekler
+  actualInvestment  Float    @default(0)  // Yapılan Yatırım
+  remainingCash     Float    @default(0)  // Kalan Nakit
+  creditCardTL      Float    @default(0)  // Kredi Kartı Borcu TL
+  creditCardEUR     Float    @default(0)  // Kredi Kartı Borcu EUR
+  netAmount         Float    @default(0)  // NET
+  note              String?              // Notlar
+  isChecked         Boolean  @default(false)
+  extraAmount       Float    @default(0)  // Ekstra
+  isExtraChecked    Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@unique([year, month])
 }

@@ -1,302 +1,495 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { MonthlyGoal } from "@/lib/types";
-import { formatCurrency, MONTH_NAMES } from "@/lib/utils";
-import { PlusCircle, Trash2, TrendingUp, TrendingDown } from "lucide-react";
+import { MONTH_NAMES } from "@/lib/utils";
+import { ChevronLeft, ChevronRight, Save, Check } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 
-export default function GoalsPage() {
-  const [goals, setGoals] = useState<MonthlyGoal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    year: new Date().getFullYear().toString(),
-    month: (new Date().getMonth() + 1).toString(),
-    incomeTarget: "",
-    savingTarget: "",
-    actualIncome: "",
-    actualExpense: "",
+type RowData = {
+  month: number;
+  netSalary: number;
+  spendingTarget: number;
+  besInvestment: number;
+  investmentTarget: number;
+  actualInvestment: number;
+  remainingCash: number;
+  creditCardTL: number;
+  creditCardEUR: number;
+  netAmount: number;
+  note: string;
+  isChecked: boolean;
+  extraAmount: number;
+  isExtraChecked: boolean;
+};
+
+function makeEmpty(month: number): RowData {
+  return {
+    month,
+    netSalary: 0,
+    spendingTarget: 0,
+    besInvestment: 0,
+    investmentTarget: 0,
+    actualInvestment: 0,
+    remainingCash: 0,
+    creditCardTL: 0,
+    creditCardEUR: 0,
+    netAmount: 0,
     note: "",
-  });
+    isChecked: false,
+    extraAmount: 0,
+    isExtraChecked: false,
+  };
+}
 
-  const loadGoals = useCallback(async () => {
-    const res = await fetch("/api/goals");
-    const data = await res.json();
-    setGoals(data);
-  }, []);
+function goalToRow(g: MonthlyGoal): RowData {
+  return {
+    month: g.month,
+    netSalary: g.netSalary,
+    spendingTarget: g.spendingTarget,
+    besInvestment: g.besInvestment,
+    investmentTarget: g.investmentTarget,
+    actualInvestment: g.actualInvestment,
+    remainingCash: g.remainingCash,
+    creditCardTL: g.creditCardTL,
+    creditCardEUR: g.creditCardEUR,
+    netAmount: g.netAmount,
+    note: g.note ?? "",
+    isChecked: g.isChecked,
+    extraAmount: g.extraAmount,
+    isExtraChecked: g.isExtraChecked,
+  };
+}
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      await loadGoals();
-      setLoading(false);
-    })();
-  }, [loadGoals]);
+// Inline editable number cell
+function NumCell({
+  value,
+  onChange,
+  className = "",
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  className?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const saveGoal = async () => {
-    if (!form.year || !form.month) return;
-    const res = await fetch("/api/goals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    if (res.ok) {
-      toast.success("Hedef kaydedildi");
-      setShowForm(false);
-      setForm({ year: new Date().getFullYear().toString(), month: (new Date().getMonth() + 1).toString(), incomeTarget: "", savingTarget: "", actualIncome: "", actualExpense: "", note: "" });
-      await loadGoals();
-    } else {
-      toast.error("Kaydedilemedi");
-    }
+  const start = () => {
+    setDraft(value === 0 ? "" : String(value));
+    setEditing(true);
+    setTimeout(() => inputRef.current?.select(), 0);
   };
 
-  const deleteGoal = async (id: string) => {
-    if (!confirm("Bu hedefi silmek istediğinizden emin misiniz?")) return;
-    await fetch(`/api/goals/${id}`, { method: "DELETE" });
-    toast.success("Silindi");
-    await loadGoals();
+  const commit = () => {
+    const n = parseFloat(draft);
+    onChange(isNaN(n) ? 0 : n);
+    setEditing(false);
   };
 
-  const totalSaved = goals.reduce((s, g) => s + Math.max(0, g.actualIncome - g.actualExpense), 0);
-  const totalTargetSaving = goals.reduce((s, g) => s + g.savingTarget, 0);
-
-  if (loading) {
+  if (editing) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
-        <Skeleton className="h-10 w-48" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28" />)}
-        </div>
-      </div>
+      <input
+        ref={inputRef}
+        className="w-full text-right bg-blue-50 dark:bg-blue-950 border border-blue-400 rounded px-1 py-0.5 text-xs font-mono outline-none"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === "Tab") commit();
+          if (e.key === "Escape") setEditing(false);
+        }}
+      />
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Aylık Hedefler</h1>
-        <Button size="sm" onClick={() => setShowForm(true)} className="gap-1.5">
-          <PlusCircle size={14} />
-          Ay Ekle
-        </Button>
-      </div>
-
-      {/* Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Toplam Biriktirilen</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-green-600">{formatCurrency(totalSaved)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Toplam Hedef</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{formatCurrency(totalTargetSaving)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Hedef Gerçekleşme</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {totalTargetSaving > 0 ? `%${((totalSaved / totalTargetSaving) * 100).toFixed(0)}` : "—"}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Goals List */}
-      <div className="space-y-3">
-        {goals.map((goal) => {
-          const saved = goal.actualIncome - goal.actualExpense;
-          const savingProgress = goal.savingTarget > 0 ? (saved / goal.savingTarget) * 100 : 0;
-          const incomeProgress = goal.incomeTarget > 0 ? (goal.actualIncome / goal.incomeTarget) * 100 : 0;
-
-          return (
-            <Card key={goal.id}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-base">
-                      {MONTH_NAMES[goal.month - 1]} {goal.year}
-                    </h3>
-                    <Badge
-                      variant="outline"
-                      className={saved >= goal.savingTarget ? "text-green-600 border-green-200 bg-green-50" : "text-muted-foreground"}
-                    >
-                      {saved >= goal.savingTarget ? "✓ Hedef Tuttu" : "Devam Ediyor"}
-                    </Badge>
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteGoal(goal.id)}>
-                    <Trash2 size={13} />
-                  </Button>
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Gelir Hedefi</p>
-                    <p className="font-medium">{formatCurrency(goal.incomeTarget)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                      <TrendingUp size={10} className="text-green-500" /> Gerçek Gelir
-                    </p>
-                    <p className="font-medium text-green-600">{formatCurrency(goal.actualIncome)}</p>
-                    {goal.incomeTarget > 0 && (
-                      <p className="text-xs text-muted-foreground">%{incomeProgress.toFixed(0)} gerçekleşti</p>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                      <TrendingDown size={10} className="text-red-500" /> Gerçek Gider
-                    </p>
-                    <p className="font-medium text-red-600">{formatCurrency(goal.actualExpense)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Yatırım Hedefi / Birikim</p>
-                    <p className={`font-medium ${saved >= goal.savingTarget ? "text-green-600" : ""}`}>
-                      {formatCurrency(saved)} / {formatCurrency(goal.savingTarget)}
-                    </p>
-                    {goal.savingTarget > 0 && (
-                      <div className="mt-1.5 h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${savingProgress >= 100 ? "bg-green-500" : "bg-primary"}`}
-                          style={{ width: `${Math.min(100, savingProgress)}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {goal.note && (
-                  <p className="mt-3 text-sm text-muted-foreground italic">"{goal.note}"</p>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-
-        {goals.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground">
-            <Target className="mx-auto mb-4 opacity-20" size={48} />
-            <p className="font-medium">Henüz hedef eklenmedi</p>
-            <p className="text-sm">Aylık gelir, gider ve yatırım hedeflerini buraya ekle</p>
-          </div>
-        )}
-      </div>
-
-      {/* Add Goal Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Aylık Hedef Ekle</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Yıl</Label>
-                <Input
-                  type="number"
-                  value={form.year}
-                  onChange={(e) => setForm((f) => ({ ...f, year: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Ay</Label>
-                <Select value={form.month} onValueChange={(v) => setForm((f) => ({ ...f, month: v }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MONTH_NAMES.map((name, i) => (
-                      <SelectItem key={i + 1} value={(i + 1).toString()}>{name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Gelir Hedefi (TL)</Label>
-                <Input
-                  type="number"
-                  placeholder="50000"
-                  value={form.incomeTarget}
-                  onChange={(e) => setForm((f) => ({ ...f, incomeTarget: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Yatırım Hedefi (TL)</Label>
-                <Input
-                  type="number"
-                  placeholder="10000"
-                  value={form.savingTarget}
-                  onChange={(e) => setForm((f) => ({ ...f, savingTarget: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Gerçek Gelir (TL)</Label>
-                <Input
-                  type="number"
-                  placeholder="48000"
-                  value={form.actualIncome}
-                  onChange={(e) => setForm((f) => ({ ...f, actualIncome: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Gerçek Gider (TL)</Label>
-                <Input
-                  type="number"
-                  placeholder="35000"
-                  value={form.actualExpense}
-                  onChange={(e) => setForm((f) => ({ ...f, actualExpense: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Not (opsiyonel)</Label>
-              <Input
-                placeholder="Bu ay için notlar..."
-                value={form.note}
-                onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowForm(false)}>İptal</Button>
-            <Button onClick={saveGoal}>Kaydet</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+    <div
+      className={`text-right text-xs font-mono cursor-text hover:bg-muted/60 rounded px-1 py-0.5 select-none ${className}`}
+      onClick={start}
+    >
+      {value === 0 ? <span className="text-muted-foreground/40">—</span> : value.toLocaleString("tr-TR")}
     </div>
   );
 }
 
-function Target({ className, size }: { className?: string; size?: number }) {
+// Inline editable text cell
+function TextCell({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const start = () => {
+    setDraft(value);
+    setEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const commit = () => {
+    onChange(draft);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        className="w-full bg-blue-50 dark:bg-blue-950 border border-blue-400 rounded px-1 py-0.5 text-xs outline-none"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") setEditing(false);
+        }}
+      />
+    );
+  }
+
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size ?? 24} height={size ?? 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
-    </svg>
+    <div
+      className="text-xs cursor-text hover:bg-muted/60 rounded px-1 py-0.5 select-none truncate max-w-[120px]"
+      onClick={start}
+      title={value}
+    >
+      {value || <span className="text-muted-foreground/40">—</span>}
+    </div>
+  );
+}
+
+export default function GoalsPage() {
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [rows, setRows] = useState<RowData[]>(() =>
+    Array.from({ length: 12 }, (_, i) => makeEmpty(i + 1))
+  );
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  const loadGoals = useCallback(async (y: number) => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/goals");
+      const data: MonthlyGoal[] = await res.json();
+      const yearData = data.filter((g) => g.year === y);
+      const newRows = Array.from({ length: 12 }, (_, i) => {
+        const found = yearData.find((g) => g.month === i + 1);
+        return found ? goalToRow(found) : makeEmpty(i + 1);
+      });
+      setRows(newRows);
+      setDirty(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadGoals(year);
+  }, [year, loadGoals]);
+
+  const updateRow = (monthIdx: number, patch: Partial<RowData>) => {
+    setRows((prev) => {
+      const next = [...prev];
+      const updated = { ...next[monthIdx], ...patch };
+      // Auto-calculate investmentTarget
+      updated.investmentTarget =
+        updated.netSalary - updated.spendingTarget - updated.besInvestment;
+      next[monthIdx] = updated;
+      return next;
+    });
+    setDirty(true);
+  };
+
+  const saveAll = async () => {
+    setSaving(true);
+    try {
+      const promises = rows.map((row) =>
+        fetch("/api/goals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ year, month: row.month, ...row }),
+        })
+      );
+      const results = await Promise.all(promises);
+      const failed = results.filter((r) => !r.ok).length;
+      if (failed > 0) {
+        toast.error(`${failed} ay kaydedilemedi`);
+      } else {
+        toast.success("Tüm veriler kaydedildi");
+        setDirty(false);
+      }
+    } catch {
+      toast.error("Kaydetme başarısız");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Column header style helpers
+  const thPlan = "bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-200 text-center text-xs font-semibold px-1.5 py-1 border border-purple-200 dark:border-purple-800";
+  const thReal = "bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-200 text-center text-xs font-semibold px-1.5 py-1 border border-green-200 dark:border-green-800";
+  const thBase = "bg-muted text-muted-foreground text-center text-xs font-semibold px-1.5 py-1 border";
+
+  if (loading) {
+    return (
+      <div className="max-w-full mx-auto px-4 py-8 space-y-4">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
+
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+
+  return (
+    <div className="px-2 py-6 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setYear((y) => y - 1)}>
+            <ChevronLeft size={14} />
+          </Button>
+          <h1 className="text-xl font-bold min-w-[80px] text-center">{year}</h1>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setYear((y) => y + 1)}>
+            <ChevronRight size={14} />
+          </Button>
+          <span className="text-sm text-muted-foreground ml-2">Para Yönetim Planı</span>
+        </div>
+        <Button
+          size="sm"
+          onClick={saveAll}
+          disabled={saving || !dirty}
+          className="gap-1.5"
+        >
+          <Save size={13} />
+          {saving ? "Kaydediliyor..." : dirty ? "Kaydet *" : "Kaydedildi"}
+        </Button>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto rounded-lg border shadow-sm">
+        <table className="w-full text-sm border-collapse min-w-[1100px]">
+          <thead>
+            <tr>
+              <th className={thBase} rowSpan={2} style={{ minWidth: 70 }}>Ay</th>
+              {/* PLANLANAN group */}
+              <th className={thPlan} colSpan={4}>PLANLANAN</th>
+              {/* GERÇEKLER group */}
+              <th className={thReal} colSpan={7}>GERÇEKLER</th>
+              {/* Extra */}
+              <th className={thBase} colSpan={2}>EKSTRA</th>
+            </tr>
+            <tr>
+              {/* PLANLANAN cols */}
+              <th className={thPlan} style={{ minWidth: 90 }}>Net Maaş</th>
+              <th className={thPlan} style={{ minWidth: 90 }}>Harcama Hedef</th>
+              <th className={thPlan} style={{ minWidth: 80 }}>BES Yat.</th>
+              <th className={thPlan} style={{ minWidth: 90 }}>Yatırıma Kalan</th>
+              {/* GERÇEKLER cols */}
+              <th className={thReal} style={{ minWidth: 90 }}>Yapılan Yatırım</th>
+              <th className={thReal} style={{ minWidth: 75 }}>Yatırım Fark</th>
+              <th className={thReal} style={{ minWidth: 80 }}>Kalan Nakit</th>
+              <th className={thReal} style={{ minWidth: 80 }}>KK TL</th>
+              <th className={thReal} style={{ minWidth: 70 }}>KK EUR</th>
+              <th className={thReal} style={{ minWidth: 80 }}>NET</th>
+              <th className={thReal} style={{ minWidth: 120 }}>Notlar</th>
+              {/* Extra */}
+              <th className={thBase} style={{ minWidth: 80 }}>Tutar</th>
+              <th className={thBase} style={{ minWidth: 40 }}>✓</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, idx) => {
+              const isCurrentMonth = year === currentYear && row.month === currentMonth;
+              const investDiff = row.actualInvestment - row.investmentTarget;
+              const rowBg = isCurrentMonth
+                ? "bg-blue-50/60 dark:bg-blue-950/30"
+                : idx % 2 === 0
+                ? "bg-background"
+                : "bg-muted/20";
+
+              return (
+                <tr key={row.month} className={`${rowBg} hover:bg-muted/40 transition-colors`}>
+                  {/* Month label */}
+                  <td className="border px-2 py-1 text-xs font-semibold text-center whitespace-nowrap">
+                    {isCurrentMonth && (
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 mr-1 mb-0.5" />
+                    )}
+                    {MONTH_NAMES[idx]}
+                  </td>
+
+                  {/* PLANLANAN */}
+                  <td className="border px-1 py-0.5">
+                    <NumCell
+                      value={row.netSalary}
+                      onChange={(v) => updateRow(idx, { netSalary: v })}
+                    />
+                  </td>
+                  <td className="border px-1 py-0.5">
+                    <NumCell
+                      value={row.spendingTarget}
+                      onChange={(v) => updateRow(idx, { spendingTarget: v })}
+                    />
+                  </td>
+                  <td className="border px-1 py-0.5">
+                    <NumCell
+                      value={row.besInvestment}
+                      onChange={(v) => updateRow(idx, { besInvestment: v })}
+                    />
+                  </td>
+                  <td className="border px-1 py-0.5 bg-purple-50/40 dark:bg-purple-950/20">
+                    <div className="text-right text-xs font-mono px-1 py-0.5 font-semibold text-purple-700 dark:text-purple-300">
+                      {row.investmentTarget === 0 ? (
+                        <span className="text-muted-foreground/40">—</span>
+                      ) : (
+                        row.investmentTarget.toLocaleString("tr-TR")
+                      )}
+                    </div>
+                  </td>
+
+                  {/* GERÇEKLER */}
+                  <td className="border px-1 py-0.5">
+                    <NumCell
+                      value={row.actualInvestment}
+                      onChange={(v) => updateRow(idx, { actualInvestment: v })}
+                    />
+                  </td>
+                  <td className="border px-1 py-0.5">
+                    <div
+                      className={`text-right text-xs font-mono px-1 py-0.5 font-semibold ${
+                        row.investmentTarget === 0
+                          ? "text-muted-foreground/40"
+                          : investDiff >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {row.investmentTarget === 0 ? (
+                        "—"
+                      ) : (
+                        `${investDiff >= 0 ? "+" : ""}${investDiff.toLocaleString("tr-TR")}`
+                      )}
+                    </div>
+                  </td>
+                  <td className="border px-1 py-0.5">
+                    <NumCell
+                      value={row.remainingCash}
+                      onChange={(v) => updateRow(idx, { remainingCash: v })}
+                    />
+                  </td>
+                  <td className="border px-1 py-0.5">
+                    <NumCell
+                      value={row.creditCardTL}
+                      onChange={(v) => updateRow(idx, { creditCardTL: v })}
+                      className={row.creditCardTL > 0 ? "text-red-600" : ""}
+                    />
+                  </td>
+                  <td className="border px-1 py-0.5">
+                    <NumCell
+                      value={row.creditCardEUR}
+                      onChange={(v) => updateRow(idx, { creditCardEUR: v })}
+                      className={row.creditCardEUR > 0 ? "text-red-600" : ""}
+                    />
+                  </td>
+                  <td className="border px-1 py-0.5 bg-green-50/40 dark:bg-green-950/20">
+                    <NumCell
+                      value={row.netAmount}
+                      onChange={(v) => updateRow(idx, { netAmount: v })}
+                      className={`font-semibold ${row.netAmount > 0 ? "text-green-600" : row.netAmount < 0 ? "text-red-600" : ""}`}
+                    />
+                  </td>
+                  <td className="border px-1 py-0.5">
+                    <TextCell
+                      value={row.note}
+                      onChange={(v) => updateRow(idx, { note: v })}
+                    />
+                  </td>
+
+                  {/* Extra */}
+                  <td className="border px-1 py-0.5">
+                    <NumCell
+                      value={row.extraAmount}
+                      onChange={(v) => updateRow(idx, { extraAmount: v })}
+                    />
+                  </td>
+                  <td className="border px-1 py-0.5 text-center">
+                    <button
+                      className={`w-5 h-5 rounded border flex items-center justify-center mx-auto transition-colors ${
+                        row.isChecked
+                          ? "bg-green-500 border-green-500 text-white"
+                          : "border-muted-foreground/30 hover:border-green-400"
+                      }`}
+                      onClick={() => updateRow(idx, { isChecked: !row.isChecked })}
+                    >
+                      {row.isChecked && <Check size={11} />}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr className="bg-muted/50 font-semibold border-t-2">
+              <td className="border px-2 py-1.5 text-xs font-bold text-center">TOPLAM</td>
+              {(
+                [
+                  "netSalary",
+                  "spendingTarget",
+                  "besInvestment",
+                  "investmentTarget",
+                  "actualInvestment",
+                ] as const
+              ).map((key) => (
+                <td key={key} className="border px-1 py-1.5 text-right text-xs font-mono font-semibold">
+                  {rows.reduce((s, r) => s + r[key], 0).toLocaleString("tr-TR")}
+                </td>
+              ))}
+              {/* diff total */}
+              <td className="border px-1 py-1.5 text-right text-xs font-mono font-semibold">
+                {(() => {
+                  const diff = rows.reduce(
+                    (s, r) => s + (r.actualInvestment - r.investmentTarget),
+                    0
+                  );
+                  return (
+                    <span className={diff >= 0 ? "text-green-600" : "text-red-600"}>
+                      {diff >= 0 ? "+" : ""}
+                      {diff.toLocaleString("tr-TR")}
+                    </span>
+                  );
+                })()}
+              </td>
+              {(["remainingCash", "creditCardTL", "creditCardEUR", "netAmount"] as const).map(
+                (key) => (
+                  <td key={key} className="border px-1 py-1.5 text-right text-xs font-mono font-semibold">
+                    {rows.reduce((s, r) => s + r[key], 0).toLocaleString("tr-TR")}
+                  </td>
+                )
+              )}
+              <td className="border px-1 py-1.5"></td>
+              <td className="border px-1 py-1.5 text-right text-xs font-mono font-semibold">
+                {rows.reduce((s, r) => s + r.extraAmount, 0).toLocaleString("tr-TR")}
+              </td>
+              <td className="border px-1 py-1.5 text-center text-xs text-muted-foreground">
+                {rows.filter((r) => r.isChecked).length}/12
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Hücreye tıklayarak düzenleme yapabilirsin. Değişiklikler <strong>Kaydet</strong> butonuyla kaydedilir.
+      </p>
+    </div>
   );
 }

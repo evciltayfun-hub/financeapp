@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const goals = await prisma.monthlyGoal.findMany({
-      orderBy: [{ year: "desc" }, { month: "desc" }],
+      orderBy: [{ year: "asc" }, { month: "asc" }],
     });
     return NextResponse.json(goals);
   } catch {
@@ -12,36 +12,49 @@ export async function GET() {
   }
 }
 
+function num(v: unknown, fallback = 0): number {
+  if (v === undefined || v === null || v === "") return fallback;
+  const n = parseFloat(String(v));
+  return isNaN(n) ? fallback : n;
+}
+
+function bool(v: unknown, fallback = false): boolean {
+  if (v === undefined || v === null) return fallback;
+  return Boolean(v);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { year, month, incomeTarget, savingTarget, actualIncome, actualExpense, note } = body;
+    const { year, month } = body;
 
     if (!year || !month) {
       return NextResponse.json({ error: "year and month required" }, { status: 400 });
     }
 
+    const data = {
+      netSalary: num(body.netSalary),
+      spendingTarget: num(body.spendingTarget),
+      besInvestment: num(body.besInvestment),
+      investmentTarget: num(body.investmentTarget),
+      actualInvestment: num(body.actualInvestment),
+      remainingCash: num(body.remainingCash),
+      creditCardTL: num(body.creditCardTL),
+      creditCardEUR: num(body.creditCardEUR),
+      netAmount: num(body.netAmount),
+      note: body.note ?? null,
+      isChecked: bool(body.isChecked),
+      extraAmount: num(body.extraAmount),
+      isExtraChecked: bool(body.isExtraChecked),
+    };
+
     const goal = await prisma.monthlyGoal.upsert({
       where: { year_month: { year: parseInt(year), month: parseInt(month) } },
-      update: {
-        incomeTarget: incomeTarget ? parseFloat(incomeTarget) : undefined,
-        savingTarget: savingTarget ? parseFloat(savingTarget) : undefined,
-        actualIncome: actualIncome !== undefined ? parseFloat(actualIncome) : undefined,
-        actualExpense: actualExpense !== undefined ? parseFloat(actualExpense) : undefined,
-        note,
-      },
-      create: {
-        year: parseInt(year),
-        month: parseInt(month),
-        incomeTarget: incomeTarget ? parseFloat(incomeTarget) : 0,
-        savingTarget: savingTarget ? parseFloat(savingTarget) : 0,
-        actualIncome: actualIncome ? parseFloat(actualIncome) : 0,
-        actualExpense: actualExpense ? parseFloat(actualExpense) : 0,
-        note,
-      },
+      update: data,
+      create: { year: parseInt(year), month: parseInt(month), ...data },
     });
 
-    return NextResponse.json(goal, { status: 201 });
+    return NextResponse.json(goal);
   } catch {
     return NextResponse.json({ error: "Failed to save goal" }, { status: 500 });
   }

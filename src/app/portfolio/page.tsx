@@ -28,7 +28,7 @@ export default function PortfolioPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set());
   const [addLotFor, setAddLotFor] = useState<Asset | null>(null);
-  const [lotForm, setLotForm] = useState({ quantity: "", costPriceTL: "", costPriceUSD: "", purchaseDate: "", note: "" });
+  const [lotForm, setLotForm] = useState({ quantity: "", costPrice: "", purchaseDate: "", note: "" });
 
   const loadAssets = useCallback(async () => {
     const res = await fetch("/api/assets");
@@ -86,15 +86,24 @@ export default function PortfolioPage() {
 
   const addLot = async () => {
     if (!addLotFor || !lotForm.quantity) return;
+    const isBIST = addLotFor.type === "BIST";
+    const payload = {
+      assetId: addLotFor.id,
+      quantity: lotForm.quantity,
+      purchaseDate: lotForm.purchaseDate,
+      note: lotForm.note,
+      costPriceTL: isBIST ? lotForm.costPrice : "",
+      costPriceUSD: !isBIST ? lotForm.costPrice : "",
+    };
     const res = await fetch("/api/lots", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assetId: addLotFor.id, ...lotForm }),
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
       toast.success("Lot eklendi");
       setAddLotFor(null);
-      setLotForm({ quantity: "", costPriceTL: "", costPriceUSD: "", purchaseDate: "", note: "" });
+      setLotForm({ quantity: "", costPrice: "", purchaseDate: "", note: "" });
       const list = await loadAssets();
       await fetchPrices(list);
     } else {
@@ -131,7 +140,8 @@ export default function PortfolioPage() {
             <TableHead>Tür</TableHead>
             <TableHead className="text-right">Güncel Fiyat</TableHead>
             <TableHead className="text-right">Adet</TableHead>
-            <TableHead className="text-right">Maliyet</TableHead>
+            <TableHead className="text-right">Ort. Maliyet</TableHead>
+            <TableHead className="text-right">Toplam Maliyet</TableHead>
             <TableHead className="text-right">Değer</TableHead>
             <TableHead className="text-right">K/Z (TL)</TableHead>
             <TableHead className="text-right">K/Z (%)</TableHead>
@@ -171,6 +181,11 @@ export default function PortfolioPage() {
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm">
                   {formatNumber(asset.totalQuantity, asset.type === "CRYPTO" ? 4 : 0)}
+                </TableCell>
+                <TableCell className="text-right font-mono text-sm text-muted-foreground">
+                  {asset.type === "BIST"
+                    ? asset.avgCostTL !== null ? `${asset.avgCostTL.toFixed(2)} ₺` : "—"
+                    : asset.avgCostUSD !== null ? `$${asset.avgCostUSD.toFixed(2)}` : "—"}
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm">
                   {formatCurrency(asset.totalCostTL)}
@@ -240,7 +255,7 @@ export default function PortfolioPage() {
           ))}
           {list.length === 0 && (
             <TableRow>
-              <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                 Bu kategoride varlık yok
               </TableCell>
             </TableRow>
@@ -343,25 +358,16 @@ export default function PortfolioPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Alış Fiyatı (TL)</Label>
-                <Input
-                  type="number"
-                  placeholder="156.40"
-                  value={lotForm.costPriceTL}
-                  onChange={(e) => setLotForm((f) => ({ ...f, costPriceTL: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Alış Fiyatı (USD)</Label>
-                <Input
-                  type="number"
-                  placeholder="182.50"
-                  value={lotForm.costPriceUSD}
-                  onChange={(e) => setLotForm((f) => ({ ...f, costPriceUSD: e.target.value }))}
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label>
+                Alış Fiyatı {addLotFor?.type === "BIST" ? "(₺)" : "($)"}
+              </Label>
+              <Input
+                type="number"
+                placeholder={addLotFor?.type === "BIST" ? "156.40" : "182.50"}
+                value={lotForm.costPrice}
+                onChange={(e) => setLotForm((f) => ({ ...f, costPrice: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Not (opsiyonel)</Label>
