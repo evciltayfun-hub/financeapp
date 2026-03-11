@@ -212,11 +212,14 @@ export default function PortfolioPage() {
               </TableRow>
 
               {expandedAssets.has(asset.id) && asset.lots.map((lot: Lot) => {
-                const avgCost = lot.costPriceTL ?? (lot.costPriceUSD ? lot.costPriceUSD * (usdTry || 1) : null);
-                const lotCost = avgCost ? lot.quantity * avgCost : null;
-                const lotValue = asset.currentPriceTL ? lot.quantity * asset.currentPriceTL : null;
-                const lotProfit = lotCost && lotValue ? lotValue - lotCost : null;
-                const lotPct = lotCost && lotProfit ? (lotProfit / lotCost) * 100 : null;
+                const isUSD = asset.type !== "BIST";
+                const lotCostPrice = isUSD ? lot.costPriceUSD : lot.costPriceTL;
+                const lotCurrentPrice = isUSD ? asset.currentPriceUSD : asset.currentPriceTL;
+                const lotCost = lotCostPrice != null ? lot.quantity * lotCostPrice : null;
+                const lotValue = lotCurrentPrice != null ? lot.quantity * lotCurrentPrice : null;
+                const lotProfit = lotCost != null && lotValue != null ? lotValue - lotCost : null;
+                const lotPct = lotCost != null && lotProfit != null && lotCost > 0 ? (lotProfit / lotCost) * 100 : null;
+                const fmt = (v: number) => isUSD ? `$${v.toFixed(2)}` : formatCurrency(v);
 
                 return (
                   <TableRow key={lot.id} className="bg-muted/30 text-sm">
@@ -226,19 +229,19 @@ export default function PortfolioPage() {
                       {lot.note && <span className="ml-2 italic text-xs">— {lot.note}</span>}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                      {lot.costPriceTL ? `${lot.costPriceTL.toFixed(2)} ₺` : lot.costPriceUSD ? `$${lot.costPriceUSD.toFixed(2)}` : "—"}
+                      {lotCostPrice != null ? fmt(lotCostPrice) : "—"}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs">
                       {formatNumber(lot.quantity, asset.type === "CRYPTO" ? 4 : 0)}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs">
-                      {lotCost ? formatCurrency(lotCost) : "—"}
+                      {lotCost != null ? fmt(lotCost) : "—"}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs">
-                      {lotValue ? formatCurrency(lotValue) : "—"}
+                      {lotValue != null ? fmt(lotValue) : "—"}
                     </TableCell>
                     <TableCell className={`text-right font-mono text-xs ${lotProfit !== null && lotProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
-                      {lotProfit !== null ? formatCurrency(lotProfit) : "—"}
+                      {lotProfit !== null ? fmt(lotProfit) : "—"}
                     </TableCell>
                     <TableCell className={`text-right font-mono text-xs font-bold ${lotPct !== null && lotPct >= 0 ? "text-green-600" : "text-red-600"}`}>
                       {lotPct !== null ? formatPercent(lotPct) : "—"}
