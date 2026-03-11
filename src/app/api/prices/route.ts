@@ -40,25 +40,28 @@ async function fetchCoinGeckoPrice(coinId: string): Promise<number | null> {
   }
 }
 
-const cryptoYahooMap: Record<string, string> = {
-  BTC: "BTC-USD", ETH: "ETH-USD", BNB: "BNB-USD", SOL: "SOL-USD",
-  ADA: "ADA-USD", XRP: "XRP-USD", DOGE: "DOGE-USD", DOT: "DOT-USD",
-  AVAX: "AVAX-USD", MATIC: "MATIC-USD", LINK: "LINK-USD", UNI: "UNI-USD",
-  ATOM: "ATOM-USD", LTC: "LTC-USD", BCH: "BCH-USD",
-};
-
-const cryptoCoinGeckoMap: Record<string, string> = {
+const coinGeckoMap: Record<string, string> = {
   BTC: "bitcoin", ETH: "ethereum", BNB: "binancecoin", SOL: "solana",
   ADA: "cardano", XRP: "ripple", DOGE: "dogecoin", DOT: "polkadot",
   AVAX: "avalanche-2", MATIC: "matic-network", LINK: "chainlink", UNI: "uniswap",
   ATOM: "cosmos", LTC: "litecoin", BCH: "bitcoin-cash",
 };
 
+// Extract base coin from symbols like BTCUSD, BTCUSDT, BTC
+function parseBaseAndQuote(symbol: string): { base: string; quote: "USD" | "USDT" } {
+  const s = symbol.toUpperCase();
+  if (s.endsWith("USDT")) return { base: s.slice(0, -4), quote: "USDT" };
+  if (s.endsWith("USD")) return { base: s.slice(0, -3), quote: "USD" };
+  return { base: s, quote: "USD" };
+}
+
 async function fetchCryptoPrice(symbol: string): Promise<number | null> {
-  const yahooTicker = cryptoYahooMap[symbol.toUpperCase()] || `${symbol.toUpperCase()}-USD`;
+  const { base, quote } = parseBaseAndQuote(symbol);
+  const yahooTicker = `${base}-${quote}`;
   const yahooPrice = await fetchYahooPrice(yahooTicker);
   if (yahooPrice !== null) return yahooPrice;
-  const coinId = cryptoCoinGeckoMap[symbol.toUpperCase()] || symbol.toLowerCase();
+  // CoinGecko fallback (always USD)
+  const coinId = coinGeckoMap[base] || base.toLowerCase();
   return fetchCoinGeckoPrice(coinId);
 }
 

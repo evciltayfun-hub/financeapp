@@ -144,7 +144,7 @@ export default function PortfolioPage() {
             <TableHead className="text-right">Ort. Maliyet</TableHead>
             <TableHead className="text-right">Toplam Maliyet</TableHead>
             <TableHead className="text-right">Değer</TableHead>
-            <TableHead className="text-right">K/Z (TL)</TableHead>
+            <TableHead className="text-right">K/Z</TableHead>
             <TableHead className="text-right">K/Z (%)</TableHead>
             <TableHead className="w-20"></TableHead>
           </TableRow>
@@ -188,13 +188,19 @@ export default function PortfolioPage() {
                     : asset.avgCostUSD !== null ? `$${asset.avgCostUSD.toFixed(2)}` : "—"}
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm">
-                  {formatCurrency(asset.totalCostTL)}
+                  {asset.type === "BIST"
+                    ? formatCurrency(asset.totalCostTL)
+                    : `$${asset.totalCostUSD.toFixed(2)}`}
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm font-medium">
-                  {asset.totalValueTL > 0 ? formatCurrency(asset.totalValueTL) : <span className="text-muted-foreground">—</span>}
+                  {asset.type === "BIST"
+                    ? (asset.totalValueTL > 0 ? formatCurrency(asset.totalValueTL) : <span className="text-muted-foreground">—</span>)
+                    : (asset.totalValueUSD > 0 ? `$${asset.totalValueUSD.toFixed(2)}` : <span className="text-muted-foreground">—</span>)}
                 </TableCell>
-                <TableCell className={`text-right font-mono text-sm font-medium ${asset.totalProfitTL >= 0 ? "text-green-600" : "text-red-600"}`}>
-                  {asset.totalValueTL > 0 ? formatCurrency(asset.totalProfitTL) : "—"}
+                <TableCell className={`text-right font-mono text-sm font-medium ${(asset.type === "BIST" ? asset.totalProfitTL : asset.totalProfitUSD) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  {(asset.type === "BIST" ? asset.totalValueTL : asset.totalValueUSD) > 0
+                    ? (asset.type === "BIST" ? formatCurrency(asset.totalProfitTL) : `$${asset.totalProfitUSD.toFixed(2)}`)
+                    : "—"}
                 </TableCell>
                 <TableCell className={`text-right font-mono text-sm font-bold ${asset.profitPercent >= 0 ? "text-green-600" : "text-red-600"}`}>
                   {asset.totalValueTL > 0 ? formatPercent(asset.profitPercent) : "—"}
