@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Fragment } from "react";
 import { Asset, PriceData, AssetWithPrice, Lot } from "@/lib/types";
 import { computeAssetWithPrice, formatCurrency, formatPercent, formatNumber } from "@/lib/utils";
 import { RefreshCw, Trash2, PlusCircle, ChevronDown, ChevronRight } from "lucide-react";
@@ -150,9 +151,8 @@ export default function PortfolioPage() {
         </TableHeader>
         <TableBody>
           {list.map((asset) => (
-            <>
+            <Fragment key={asset.id}>
               <TableRow
-                key={asset.id}
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => toggleExpand(asset.id)}
               >
@@ -251,7 +251,7 @@ export default function PortfolioPage() {
                   </TableRow>
                 );
               })}
-            </>
+            </Fragment>
           ))}
           {list.length === 0 && (
             <TableRow>
