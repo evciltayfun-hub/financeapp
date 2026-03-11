@@ -188,19 +188,44 @@ export default function PortfolioPage() {
                     : asset.avgCostUSD !== null ? `$${asset.avgCostUSD.toFixed(2)}` : "—"}
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm">
-                  {asset.type === "BIST"
-                    ? formatCurrency(asset.totalCostTL)
-                    : `$${asset.totalCostUSD.toFixed(2)}`}
+                  {asset.type === "BIST" ? (
+                    formatCurrency(asset.totalCostTL)
+                  ) : (
+                    <div>
+                      <div>${asset.totalCostUSD.toFixed(2)}</div>
+                      <div className="text-muted-foreground">{formatCurrency(asset.totalCostTL)}</div>
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm font-medium">
-                  {asset.type === "BIST"
-                    ? (asset.totalValueTL > 0 ? formatCurrency(asset.totalValueTL) : <span className="text-muted-foreground">—</span>)
-                    : (asset.totalValueUSD > 0 ? `$${asset.totalValueUSD.toFixed(2)}` : <span className="text-muted-foreground">—</span>)}
+                  {asset.type === "BIST" ? (
+                    asset.totalValueTL > 0 ? formatCurrency(asset.totalValueTL) : <span className="text-muted-foreground">—</span>
+                  ) : (
+                    asset.totalValueUSD > 0 ? (
+                      <div>
+                        <div>${asset.totalValueUSD.toFixed(2)}</div>
+                        <div className="text-muted-foreground">{formatCurrency(asset.totalValueTL)}</div>
+                      </div>
+                    ) : <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
-                <TableCell className={`text-right font-mono text-sm font-medium ${(asset.type === "BIST" ? asset.totalProfitTL : asset.totalProfitUSD) >= 0 ? "text-green-600" : "text-red-600"}`}>
-                  {(asset.type === "BIST" ? asset.totalValueTL : asset.totalValueUSD) > 0
-                    ? (asset.type === "BIST" ? formatCurrency(asset.totalProfitTL) : `$${asset.totalProfitUSD.toFixed(2)}`)
-                    : "—"}
+                <TableCell className="text-right font-mono text-sm font-medium">
+                  {(asset.type === "BIST" ? asset.totalValueTL : asset.totalValueUSD) > 0 ? (
+                    asset.type === "BIST" ? (
+                      <span className={asset.totalProfitTL >= 0 ? "text-green-600" : "text-red-600"}>
+                        {formatCurrency(asset.totalProfitTL)}
+                      </span>
+                    ) : (
+                      <div>
+                        <div className={asset.totalProfitUSD >= 0 ? "text-green-600" : "text-red-600"}>
+                          ${asset.totalProfitUSD.toFixed(2)}
+                        </div>
+                        <div className={`${asset.totalProfitTL >= 0 ? "text-green-600" : "text-red-600"} opacity-60`}>
+                          {formatCurrency(asset.totalProfitTL)}
+                        </div>
+                      </div>
+                    )
+                  ) : "—"}
                 </TableCell>
                 <TableCell className={`text-right font-mono text-sm font-bold ${asset.profitPercent >= 0 ? "text-green-600" : "text-red-600"}`}>
                   {asset.totalValueTL > 0 ? formatPercent(asset.profitPercent) : "—"}
@@ -306,23 +331,35 @@ export default function PortfolioPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {["BIST", "US", "CRYPTO"].map((type) => {
             const items = assetsWithPrice.filter((a) => a.type === type);
-            const val = items.reduce((s, a) => s + a.totalValueTL, 0);
-            const cost = items.reduce((s, a) => s + a.totalCostTL, 0);
-            const pct = cost > 0 ? ((val - cost) / cost) * 100 : 0;
+            const valTL = items.reduce((s, a) => s + a.totalValueTL, 0);
+            const valUSD = items.reduce((s, a) => s + a.totalValueUSD, 0);
+            const costTL = items.reduce((s, a) => s + a.totalCostTL, 0);
+            const costUSD = items.reduce((s, a) => s + a.totalCostUSD, 0);
+            const pct = type === "BIST"
+              ? (costTL > 0 ? ((valTL - costTL) / costTL) * 100 : 0)
+              : (costUSD > 0 ? ((valUSD - costUSD) / costUSD) * 100 : 0);
             if (items.length === 0) return null;
             return (
               <Card key={type} className="p-3">
                 <p className="text-xs text-muted-foreground">{type}</p>
-                <p className="font-bold">{formatCurrency(val)}</p>
+                {type === "BIST" ? (
+                  <p className="font-bold">{formatCurrency(valTL)}</p>
+                ) : (
+                  <>
+                    <p className="font-bold">${valUSD.toFixed(2)}</p>
+                    <p className="font-bold text-muted-foreground">{formatCurrency(valTL)}</p>
+                  </>
+                )}
                 <p className={`text-xs font-medium ${pct >= 0 ? "text-green-600" : "text-red-600"}`}>{formatPercent(pct)}</p>
               </Card>
             );
           })}
           <Card className="p-3">
             <p className="text-xs text-muted-foreground">Toplam</p>
-            <p className="font-bold">{formatCurrency(assetsWithPrice.reduce((s, a) => s + a.totalValueTL, 0))}</p>
+            <p className="font-bold">${assetsWithPrice.reduce((s, a) => s + a.totalValueUSD, 0).toFixed(2)}</p>
+            <p className="font-bold text-muted-foreground">{formatCurrency(assetsWithPrice.reduce((s, a) => s + a.totalValueTL, 0))}</p>
             {usdTry > 0 && (
-              <p className="text-xs text-muted-foreground">$1 = {usdTry.toFixed(2)} ₺</p>
+              <p className="text-xs text-muted-foreground mt-0.5">$1 = {usdTry.toFixed(2)} ₺</p>
             )}
           </Card>
         </div>
