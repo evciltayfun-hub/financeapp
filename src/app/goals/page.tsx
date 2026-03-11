@@ -178,7 +178,8 @@ export default function GoalsPage() {
     setLoading(true);
     try {
       const res = await fetch("/api/goals");
-      const data: MonthlyGoal[] = await res.json();
+      const raw = await res.json();
+      const data: MonthlyGoal[] = Array.isArray(raw) ? raw : [];
       const yearData = data.filter((g) => g.year === y);
       const newRows = Array.from({ length: 12 }, (_, i) => {
         const found = yearData.find((g) => g.month === i + 1);
