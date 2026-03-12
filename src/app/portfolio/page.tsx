@@ -17,7 +17,9 @@ import { Label } from "@/components/ui/label";
 import { Fragment } from "react";
 import { Asset, PriceData, AssetWithPrice, Lot } from "@/lib/types";
 import { computeAssetWithPrice, formatCurrency, formatPercent, formatNumber } from "@/lib/utils";
-import { RefreshCw, Trash2, PlusCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { RefreshCw, Trash2, PlusCircle, ChevronDown, ChevronRight, Wallet } from "lucide-react";
+
+type CashBalance = { id: string; currency: string; amount: number; label: string };
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -30,6 +32,9 @@ export default function PortfolioPage() {
   const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set());
   const [addLotFor, setAddLotFor] = useState<Asset | null>(null);
   const [lotForm, setLotForm] = useState({ quantity: "", costPrice: "", purchaseDate: "", note: "" });
+  const [cashBalances, setCashBalances] = useState<CashBalance[]>([]);
+  const [showCashDialog, setShowCashDialog] = useState(false);
+  const [cashForm, setCashForm] = useState({ currency: "TRY", amount: "", label: "" });
 
   const loadAssets = useCallback(async () => {
     const res = await fetch("/api/assets");
@@ -60,14 +65,43 @@ export default function PortfolioPage() {
     }
   }, []);
 
+  const loadCash = useCallback(async () => {
+    const res = await fetch("/api/cash");
+    const data = await res.json();
+    setCashBalances(Array.isArray(data) ? data : []);
+  }, []);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       const list = await loadAssets();
-      await fetchPrices(list);
+      await Promise.all([fetchPrices(list), loadCash()]);
       setLoading(false);
     })();
-  }, [loadAssets, fetchPrices]);
+  }, [loadAssets, fetchPrices, loadCash]);
+
+  const saveCash = async () => {
+    if (!cashForm.amount) return;
+    const res = await fetch("/api/cash", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currency: cashForm.currency, amount: cashForm.amount, label: cashForm.label }),
+    });
+    if (res.ok) {
+      toast.success("Nakit güncellendi");
+      setShowCashDialog(false);
+      setCashForm({ currency: "TRY", amount: "", label: "" });
+      await loadCash();
+    } else {
+      toast.error("Kaydedilemedi");
+    }
+  };
+
+  const deleteCash = async (id: string) => {
+    await fetch(`/api/cash/${id}`, { method: "DELETE" });
+    toast.success("Nakit silindi");
+    await loadCash();
+  };
 
   const deleteAsset = async (id: string) => {
     if (!confirm("Bu varlığı ve tüm lotları silmek istediğinizden emin misiniz?")) return;
@@ -339,7 +373,21 @@ export default function PortfolioPage() {
       </div>
 
       {/* Summary */}
-      {assets.length > 0 && (() => {
+      {(assets.length > 0 || cashBalances.length > 0) && (() => {
+        // Cash totals
+        const usdRate = usdTry || 1;
+        const cashTotalUSD = cashBalances.reduce((s, c) => {
+          if (c.currency === "USD") return s + c.amount;
+          if (c.currency === "TRY") return s + c.amount / usdRate;
+          if (c.currency === "EUR") return s + c.amount * 1.08; // approx EUR/USD
+          return s;
+        }, 0);
+        const cashTotalTL = cashBalances.reduce((s, c) => {
+          if (c.currency === "TRY") return s + c.amount;
+          if (c.currency === "USD") return s + c.amount * usdRate;
+          if (c.currency === "EUR") return s + c.amount * 1.08 * usdRate;
+          return s;
+        }, 0);
         const cardStyle: Record<string, React.CSSProperties> = {
           BIST: {
             background: "linear-gradient(135deg, oklch(0.42 0.14 145) 0%, oklch(0.28 0.07 145) 100%)",
@@ -354,8 +402,11 @@ export default function PortfolioPage() {
             borderColor: "oklch(0.65 0.22 52)",
           },
         };
+        const grandTotalUSD = assetsWithPrice.reduce((s, a) => s + a.totalValueUSD, 0) + cashTotalUSD;
+        const grandTotalTL  = assetsWithPrice.reduce((s, a) => s + a.totalValueTL,  0) + cashTotalTL;
+
         return (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {["BIST", "US", "CRYPTO"].map((type) => {
               const items = assetsWithPrice.filter((a) => a.type === type);
               const valTL = items.reduce((s, a) => s + a.totalValueTL, 0);
@@ -380,22 +431,63 @@ export default function PortfolioPage() {
                 </Card>
               );
             })}
+
+            {/* Nakit Kartı */}
+            <Card className="p-4" style={{ background: "linear-gradient(135deg, oklch(0.38 0.10 220) 0%, oklch(0.27 0.05 220) 100%)", borderColor: "oklch(0.55 0.16 220)" }}>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/50 flex items-center gap-1">
+                  <Wallet size={11} /> Nakit
+                </p>
+                <Button
+                  variant="ghost" size="icon"
+                  className="h-5 w-5 text-white/50 hover:text-white hover:bg-white/10"
+                  onClick={() => { setCashForm({ currency: "TRY", amount: "", label: "" }); setShowCashDialog(true); }}
+                >
+                  <PlusCircle size={12} />
+                </Button>
+              </div>
+              {cashBalances.length === 0 ? (
+                <p className="text-sm text-white/40 mt-2">Nakit yok</p>
+              ) : (
+                <div className="mt-1 space-y-0.5">
+                  {cashBalances.map((c) => (
+                    <div key={c.id} className="flex items-center justify-between text-sm group">
+                      <span className="text-white/60">{c.label || c.currency}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-semibold">
+                          {c.currency === "TRY" ? formatCurrency(c.amount) : c.currency === "USD" ? `$${c.amount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}` : `€${c.amount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}`}
+                        </span>
+                        <button onClick={() => { setCashForm({ currency: c.currency, amount: String(c.amount), label: c.label }); setShowCashDialog(true); }} className="opacity-0 group-hover:opacity-100 text-white/40 hover:text-white transition-opacity text-xs">✏</button>
+                        <button onClick={() => deleteCash(c.id)} className="opacity-0 group-hover:opacity-100 text-red-400/60 hover:text-red-400 transition-opacity text-xs">✕</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="mt-2 pt-2 border-t border-white/10">
+                <p className="text-base font-bold">${cashTotalUSD.toFixed(2)}</p>
+                <p className="text-sm text-white/60">{formatCurrency(cashTotalTL)}</p>
+              </div>
+            </Card>
+
+            {/* Toplam (varlık + nakit) */}
             <Card className="p-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Toplam</p>
-              <p className="text-2xl font-bold mt-1">${assetsWithPrice.reduce((s, a) => s + a.totalValueUSD, 0).toFixed(2)}</p>
-              <p className="text-base font-semibold text-muted-foreground">{formatCurrency(assetsWithPrice.reduce((s, a) => s + a.totalValueTL, 0))}</p>
+              <p className="text-2xl font-bold mt-1">${grandTotalUSD.toFixed(2)}</p>
+              <p className="text-base font-semibold text-muted-foreground">{formatCurrency(grandTotalTL)}</p>
               {usdTry > 0 && (
                 <p className="text-xs text-muted-foreground mt-1">$1 = {usdTry.toFixed(2)} ₺</p>
               )}
             </Card>
+
+            {/* Dağılım */}
             <Card className="p-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Dağılım</p>
               {["BIST", "US", "CRYPTO"].map((type) => {
                 const items = assetsWithPrice.filter((a) => a.type === type);
                 if (items.length === 0) return null;
                 const val = items.reduce((s, a) => s + a.totalValueTL, 0);
-                const total = assetsWithPrice.reduce((s, a) => s + a.totalValueTL, 0);
-                const pct = total > 0 ? (val / total) * 100 : 0;
+                const pct = grandTotalTL > 0 ? (val / grandTotalTL) * 100 : 0;
                 return (
                   <div key={type} className="flex items-center justify-between text-sm py-0.5">
                     <span className="text-muted-foreground">{type}</span>
@@ -403,6 +495,12 @@ export default function PortfolioPage() {
                   </div>
                 );
               })}
+              {cashTotalTL > 0 && (
+                <div className="flex items-center justify-between text-sm py-0.5">
+                  <span className="text-muted-foreground">Nakit</span>
+                  <span className="font-semibold">{grandTotalTL > 0 ? ((cashTotalTL / grandTotalTL) * 100).toFixed(1) : "0.0"}%</span>
+                </div>
+              )}
             </Card>
           </div>
         );
@@ -470,6 +568,50 @@ export default function PortfolioPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddLotFor(null)}>İptal</Button>
             <Button onClick={addLot} disabled={!lotForm.quantity}>Ekle</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cash Dialog */}
+      <Dialog open={showCashDialog} onOpenChange={(open) => !open && setShowCashDialog(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nakit Ekle / Güncelle</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Para Birimi</Label>
+              <select
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                value={cashForm.currency}
+                onChange={(e) => setCashForm((f) => ({ ...f, currency: e.target.value }))}
+              >
+                <option value="TRY">TRY — Türk Lirası</option>
+                <option value="USD">USD — Amerikan Doları</option>
+                <option value="EUR">EUR — Euro</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Miktar</Label>
+              <Input
+                type="number"
+                placeholder="10000"
+                value={cashForm.amount}
+                onChange={(e) => setCashForm((f) => ({ ...f, amount: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Etiket (opsiyonel)</Label>
+              <Input
+                placeholder="Vadesiz hesap, Cüzdan..."
+                value={cashForm.label}
+                onChange={(e) => setCashForm((f) => ({ ...f, label: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCashDialog(false)}>İptal</Button>
+            <Button onClick={saveCash} disabled={!cashForm.amount}>Kaydet</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

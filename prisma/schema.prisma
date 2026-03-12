@@ -56,3 +56,11 @@ model MonthlyGoal {
 
   @@unique([year, month])
 }
+
+model CashBalance {
+  id        String   @id @default(cuid())
+  currency  String   @unique  // TRY, USD, EUR
+  amount    Float    @default(0)
+  label     String   @default("")
+  updatedAt DateTime @updatedAt
+}
