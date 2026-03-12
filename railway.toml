@@ -1,0 +1,4 @@
+[deploy]
+startCommand = "mkdir -p /app/data && npx prisma migrate deploy && npx next start -p $PORT"
+healthcheckPath = "/"
+healthcheckTimeout = 30
