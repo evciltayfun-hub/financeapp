@@ -17,11 +17,12 @@ import { Label } from "@/components/ui/label";
 import { Fragment } from "react";
 import { Asset, PriceData, AssetWithPrice, Lot } from "@/lib/types";
 import { computeAssetWithPrice, formatCurrency, formatPercent, formatNumber } from "@/lib/utils";
-import { RefreshCw, Trash2, PlusCircle, ChevronDown, ChevronRight, Wallet, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-
-type CashBalance = { id: string; currency: string; amount: number; label: string };
+import { RefreshCw, Trash2, PlusCircle, ChevronDown, ChevronRight, Wallet, ArrowUpDown, ArrowUp, ArrowDown, StickyNote, Send } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+
+type CashBalance = { id: string; currency: string; amount: number; label: string };
+type PortfolioNote = { id: string; content: string; createdAt: string };
 
 export default function PortfolioPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -35,6 +36,8 @@ export default function PortfolioPage() {
   const [cashBalances, setCashBalances] = useState<CashBalance[]>([]);
   const [showCashDialog, setShowCashDialog] = useState(false);
   const [cashForm, setCashForm] = useState({ currency: "TRY", amount: "", label: "" });
+  const [notes, setNotes] = useState<PortfolioNote[]>([]);
+  const [newNote, setNewNote] = useState("");
   type SortKey = "symbol" | "type" | "currentPrice" | "totalQuantity" | "avgCost" | "totalCost" | "totalValue" | "profit" | "profitPercent";
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -74,14 +77,38 @@ export default function PortfolioPage() {
     setCashBalances(Array.isArray(data) ? data : []);
   }, []);
 
+  const loadNotes = useCallback(async () => {
+    const res = await fetch("/api/notes");
+    const data = await res.json();
+    setNotes(Array.isArray(data) ? data : []);
+  }, []);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       const list = await loadAssets();
-      await Promise.all([fetchPrices(list), loadCash()]);
+      await Promise.all([fetchPrices(list), loadCash(), loadNotes()]);
       setLoading(false);
     })();
-  }, [loadAssets, fetchPrices, loadCash]);
+  }, [loadAssets, fetchPrices, loadCash, loadNotes]);
+
+  const addNote = async () => {
+    if (!newNote.trim()) return;
+    const res = await fetch("/api/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: newNote }),
+    });
+    if (res.ok) {
+      setNewNote("");
+      await loadNotes();
+    }
+  };
+
+  const deleteNote = async (id: string) => {
+    await fetch(`/api/notes/${id}`, { method: "DELETE" });
+    await loadNotes();
+  };
 
   const saveCash = async () => {
     if (!cashForm.amount) return;
@@ -559,6 +586,45 @@ export default function PortfolioPage() {
           </TabsContent>
         ))}
       </Tabs>
+
+      {/* Notlar */}
+      <div className="space-y-3">
+        <h2 className="text-base font-semibold flex items-center gap-2 text-muted-foreground">
+          <StickyNote size={16} /> Notlar
+        </h2>
+        <div className="flex gap-2">
+          <textarea
+            className="flex-1 min-h-[72px] rounded-md border bg-card text-foreground px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+            placeholder="Not ekle... (Ctrl+Enter ile kaydet)"
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) addNote(); }}
+          />
+          <Button size="sm" className="self-end gap-1.5" onClick={addNote} disabled={!newNote.trim()}>
+            <Send size={13} /> Ekle
+          </Button>
+        </div>
+        {notes.length > 0 && (
+          <div className="space-y-2">
+            {notes.map((n) => (
+              <div key={n.id} className="group flex gap-3 rounded-md border bg-card px-4 py-3">
+                <div className="flex-1">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{n.content}</p>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    {new Date(n.createdAt).toLocaleString("tr-TR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" })}
+                  </p>
+                </div>
+                <button
+                  onClick={() => deleteNote(n.id)}
+                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity shrink-0 mt-0.5"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Add Lot Dialog */}
       <Dialog open={!!addLotFor} onOpenChange={(open) => !open && setAddLotFor(null)}>

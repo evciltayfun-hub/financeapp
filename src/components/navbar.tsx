@@ -7,7 +7,6 @@ import { TrendingUp, Target, PlusCircle } from "lucide-react";
 
 const navItems = [
   { href: "/portfolio", label: "Portföy", icon: TrendingUp },
-  { href: "/goals", label: "Hedefler", icon: Target },
 ];
 
 export default function Navbar() {
