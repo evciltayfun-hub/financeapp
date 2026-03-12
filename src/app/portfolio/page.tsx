@@ -131,6 +131,17 @@ export default function PortfolioPage() {
     { value: "CRYPTO", label: "Kripto" },
   ];
 
+  const typeRowStyle: Record<string, React.CSSProperties> = {
+    BIST:   { backgroundColor: "oklch(0.30 0.05 145)" },
+    US:     { backgroundColor: "oklch(0.30 0.05 255)" },
+    CRYPTO: { backgroundColor: "oklch(0.30 0.06 52)"  },
+  };
+  const typeBadgeStyle: Record<string, React.CSSProperties> = {
+    BIST:   { borderColor: "oklch(0.55 0.18 145)", color: "oklch(0.72 0.18 145)" },
+    US:     { borderColor: "oklch(0.55 0.18 255)", color: "oklch(0.72 0.18 255)" },
+    CRYPTO: { borderColor: "oklch(0.60 0.20 52)",  color: "oklch(0.72 0.20 52)"  },
+  };
+
   const renderTable = (list: AssetWithPrice[]) => (
     <div className="border rounded-lg overflow-hidden">
       <Table>
@@ -153,7 +164,8 @@ export default function PortfolioPage() {
           {list.map((asset) => (
             <Fragment key={asset.id}>
               <TableRow
-                className="cursor-pointer hover:bg-muted/50"
+                className="cursor-pointer hover:brightness-125 transition-all"
+                style={typeRowStyle[asset.type] ?? {}}
                 onClick={() => toggleExpand(asset.id)}
               >
                 <TableCell>
@@ -168,7 +180,7 @@ export default function PortfolioPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs font-semibold" style={typeBadgeStyle[asset.type]}>
                     {asset.type}
                   </Badge>
                 </TableCell>
