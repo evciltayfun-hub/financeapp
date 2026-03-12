@@ -20,6 +20,9 @@ import { computeAssetWithPrice, formatCurrency, formatPercent, formatNumber } fr
 import { RefreshCw, Trash2, PlusCircle, ChevronDown, ChevronRight, Wallet, ArrowUpDown, ArrowUp, ArrowDown, StickyNote, Send } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { usePrivacy } from "@/lib/privacy-context";
+
+const HIDDEN = "••••••";
 
 type CashBalance = { id: string; currency: string; amount: number; label: string };
 type PortfolioNote = { id: string; content: string; createdAt: string };
@@ -41,6 +44,8 @@ export default function PortfolioPage() {
   type SortKey = "symbol" | "type" | "currentPrice" | "totalQuantity" | "avgCost" | "totalCost" | "totalValue" | "profit" | "profitPercent";
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const { hidden } = usePrivacy();
+  const H = (val: string) => hidden ? HIDDEN : val;
 
   const loadAssets = useCallback(async () => {
     const res = await fetch("/api/assets");
@@ -288,37 +293,35 @@ export default function PortfolioPage() {
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm">
                   {asset.currentPrice !== null
-                    ? asset.type === "BIST"
-                      ? `${asset.currentPrice.toFixed(2)} ₺`
-                      : `$${asset.currentPrice.toFixed(2)}`
+                    ? H(asset.type === "BIST" ? `${asset.currentPrice.toFixed(2)} ₺` : `$${asset.currentPrice.toFixed(2)}`)
                     : <span className="text-muted-foreground">—</span>}
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm">
-                  {formatNumber(asset.totalQuantity, asset.type === "CRYPTO" ? 4 : 0)}
+                  {H(formatNumber(asset.totalQuantity, asset.type === "CRYPTO" ? 4 : 0))}
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm text-muted-foreground">
-                  {asset.type === "BIST"
+                  {H(asset.type === "BIST"
                     ? asset.avgCostTL !== null ? `${asset.avgCostTL.toFixed(2)} ₺` : "—"
-                    : asset.avgCostUSD !== null ? `$${asset.avgCostUSD.toFixed(2)}` : "—"}
+                    : asset.avgCostUSD !== null ? `$${asset.avgCostUSD.toFixed(2)}` : "—")}
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm">
                   {asset.type === "BIST" ? (
-                    formatCurrency(asset.totalCostTL)
+                    H(formatCurrency(asset.totalCostTL))
                   ) : (
                     <div>
-                      <div>${asset.totalCostUSD.toFixed(2)}</div>
-                      <div className="text-muted-foreground">{formatCurrency(asset.totalCostTL)}</div>
+                      <div>{H(`$${asset.totalCostUSD.toFixed(2)}`)}</div>
+                      <div className="text-muted-foreground">{H(formatCurrency(asset.totalCostTL))}</div>
                     </div>
                   )}
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm font-medium">
                   {asset.type === "BIST" ? (
-                    asset.totalValueTL > 0 ? formatCurrency(asset.totalValueTL) : <span className="text-muted-foreground">—</span>
+                    asset.totalValueTL > 0 ? H(formatCurrency(asset.totalValueTL)) : <span className="text-muted-foreground">—</span>
                   ) : (
                     asset.totalValueUSD > 0 ? (
                       <div>
-                        <div>${asset.totalValueUSD.toFixed(2)}</div>
-                        <div className="text-muted-foreground">{formatCurrency(asset.totalValueTL)}</div>
+                        <div>{H(`$${asset.totalValueUSD.toFixed(2)}`)}</div>
+                        <div className="text-muted-foreground">{H(formatCurrency(asset.totalValueTL))}</div>
                       </div>
                     ) : <span className="text-muted-foreground">—</span>
                   )}
@@ -327,22 +330,22 @@ export default function PortfolioPage() {
                   {(asset.type === "BIST" ? asset.totalValueTL : asset.totalValueUSD) > 0 ? (
                     asset.type === "BIST" ? (
                       <span className={asset.totalProfitTL >= 0 ? "text-green-600" : "text-red-600"}>
-                        {formatCurrency(asset.totalProfitTL)}
+                        {H(formatCurrency(asset.totalProfitTL))}
                       </span>
                     ) : (
                       <div>
                         <div className={asset.totalProfitUSD >= 0 ? "text-green-600" : "text-red-600"}>
-                          ${asset.totalProfitUSD.toFixed(2)}
+                          {H(`$${asset.totalProfitUSD.toFixed(2)}`)}
                         </div>
                         <div className={`${asset.totalProfitTL >= 0 ? "text-green-600" : "text-red-600"} opacity-60`}>
-                          {formatCurrency(asset.totalProfitTL)}
+                          {H(formatCurrency(asset.totalProfitTL))}
                         </div>
                       </div>
                     )
                   ) : "—"}
                 </TableCell>
                 <TableCell className={`text-right font-mono text-sm font-bold ${asset.profitPercent >= 0 ? "text-green-600" : "text-red-600"}`}>
-                  {asset.totalValueTL > 0 ? formatPercent(asset.profitPercent) : "—"}
+                  {asset.totalValueTL > 0 ? H(formatPercent(asset.profitPercent)) : "—"}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -374,22 +377,22 @@ export default function PortfolioPage() {
                       {lot.note && <span className="ml-2 italic text-xs">— {lot.note}</span>}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                      {lotCostPrice != null ? fmt(lotCostPrice) : "—"}
+                      {lotCostPrice != null ? H(fmt(lotCostPrice)) : "—"}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs">
-                      {formatNumber(lot.quantity, asset.type === "CRYPTO" ? 4 : 0)}
+                      {H(formatNumber(lot.quantity, asset.type === "CRYPTO" ? 4 : 0))}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs">
-                      {lotCost != null ? fmt(lotCost) : "—"}
+                      {lotCost != null ? H(fmt(lotCost)) : "—"}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs">
-                      {lotValue != null ? fmt(lotValue) : "—"}
+                      {lotValue != null ? H(fmt(lotValue)) : "—"}
                     </TableCell>
                     <TableCell className={`text-right font-mono text-xs ${lotProfit !== null && lotProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
-                      {lotProfit !== null ? fmt(lotProfit) : "—"}
+                      {lotProfit !== null ? H(fmt(lotProfit)) : "—"}
                     </TableCell>
                     <TableCell className={`text-right font-mono text-xs font-bold ${lotPct !== null && lotPct >= 0 ? "text-green-600" : "text-red-600"}`}>
-                      {lotPct !== null ? formatPercent(lotPct) : "—"}
+                      {lotPct !== null ? H(formatPercent(lotPct)) : "—"}
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteLot(lot.id)}>
@@ -490,11 +493,11 @@ export default function PortfolioPage() {
               return (
                 <Card key={type} className="p-4" style={cardStyle[type]}>
                   <p className="text-xs font-semibold uppercase tracking-wider text-white/50">{type}</p>
-                  <p className="text-2xl font-bold mt-1">${valUSD.toFixed(2)}</p>
-                  <p className="text-base font-semibold text-white/60">{formatCurrency(valTL)}</p>
-                  <p className={`text-sm font-medium mt-1 ${pct >= 0 ? "text-green-400" : "text-red-400"}`}>{formatPercent(pct)}</p>
+                  <p className="text-2xl font-bold mt-1">{H(`$${valUSD.toFixed(2)}`)}</p>
+                  <p className="text-base font-semibold text-white/60">{H(formatCurrency(valTL))}</p>
+                  <p className={`text-sm font-medium mt-1 ${pct >= 0 ? "text-green-400" : "text-red-400"}`}>{H(formatPercent(pct))}</p>
                   <p className={`text-sm ${(type === "BIST" ? profitTL : profitUSD) >= 0 ? "text-green-400" : "text-red-400"}`}>
-                    K/Z: {type === "BIST" ? formatCurrency(profitTL) : `$${profitUSD.toFixed(2)}`}
+                    K/Z: {H(type === "BIST" ? formatCurrency(profitTL) : `$${profitUSD.toFixed(2)}`)}
                   </p>
                 </Card>
               );
@@ -523,7 +526,7 @@ export default function PortfolioPage() {
                       <span className="text-white/60">{c.label || c.currency}</span>
                       <div className="flex items-center gap-1">
                         <span className="font-semibold">
-                          {c.currency === "TRY" ? formatCurrency(c.amount) : c.currency === "USD" ? `$${c.amount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}` : `€${c.amount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}`}
+                          {H(c.currency === "TRY" ? formatCurrency(c.amount) : c.currency === "USD" ? `$${c.amount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}` : `€${c.amount.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}`)}
                         </span>
                         <button onClick={() => { setCashForm({ currency: c.currency, amount: String(c.amount), label: c.label }); setShowCashDialog(true); }} className="opacity-0 group-hover:opacity-100 text-white/40 hover:text-white transition-opacity text-xs">✏</button>
                         <button onClick={() => deleteCash(c.id)} className="opacity-0 group-hover:opacity-100 text-red-400/60 hover:text-red-400 transition-opacity text-xs">✕</button>
@@ -533,18 +536,18 @@ export default function PortfolioPage() {
                 </div>
               )}
               <div className="mt-2 pt-2 border-t border-white/10">
-                <p className="text-base font-bold">${cashTotalUSD.toFixed(2)}</p>
-                <p className="text-sm text-white/60">{formatCurrency(cashTotalTL)}</p>
+                <p className="text-base font-bold">{H(`$${cashTotalUSD.toFixed(2)}`)}</p>
+                <p className="text-sm text-white/60">{H(formatCurrency(cashTotalTL))}</p>
               </div>
             </Card>
 
             {/* Toplam (varlık + nakit) */}
             <Card className="p-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Toplam</p>
-              <p className="text-2xl font-bold mt-1">${grandTotalUSD.toFixed(2)}</p>
-              <p className="text-base font-semibold text-muted-foreground">{formatCurrency(grandTotalTL)}</p>
+              <p className="text-2xl font-bold mt-1">{H(`$${grandTotalUSD.toFixed(2)}`)}</p>
+              <p className="text-base font-semibold text-muted-foreground">{H(formatCurrency(grandTotalTL))}</p>
               {usdTry > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">$1 = {usdTry.toFixed(2)} ₺</p>
+                <p className="text-xs text-muted-foreground mt-1">$1 = {H(`${usdTry.toFixed(2)} ₺`)}</p>
               )}
             </Card>
 
