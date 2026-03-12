@@ -169,9 +169,9 @@ export default function PortfolioPage() {
   ];
 
   const typeRowStyle: Record<string, React.CSSProperties> = {
-    BIST:   { backgroundColor: "oklch(0.48 0.07 145)" },
-    US:     { backgroundColor: "oklch(0.48 0.07 255)" },
-    CRYPTO: { backgroundColor: "oklch(0.48 0.08 52)"  },
+    BIST:   { backgroundColor: "oklch(0.32 0.06 145)" },
+    US:     { backgroundColor: "oklch(0.32 0.06 255)" },
+    CRYPTO: { backgroundColor: "oklch(0.32 0.07 52)"  },
   };
   const typeBadgeStyle: Record<string, React.CSSProperties> = {
     BIST:   { borderColor: "oklch(0.55 0.18 145)", color: "oklch(0.72 0.18 145)" },
