@@ -1,4 +1,4 @@
 [deploy]
-startCommand = "mkdir -p /app/data && npx prisma migrate deploy && npx next start -p $PORT"
+startCommand = "export DATABASE_URL=${DATABASE_URL:-file:/app/data/dev.db} && mkdir -p /app/data && npx prisma migrate deploy && npx next start -p ${PORT:-3000}"
 healthcheckPath = "/"
-healthcheckTimeout = 30
+healthcheckTimeoutSecs = 30
