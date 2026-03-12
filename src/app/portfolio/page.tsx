@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Fragment } from "react";
 import { Asset, PriceData, AssetWithPrice, Lot } from "@/lib/types";
 import { computeAssetWithPrice, formatCurrency, formatPercent, formatNumber } from "@/lib/utils";
-import { RefreshCw, Trash2, PlusCircle, ChevronDown, ChevronRight, Wallet } from "lucide-react";
+import { RefreshCw, Trash2, PlusCircle, ChevronDown, ChevronRight, Wallet, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 type CashBalance = { id: string; currency: string; amount: number; label: string };
 import { toast } from "sonner";
@@ -35,6 +35,9 @@ export default function PortfolioPage() {
   const [cashBalances, setCashBalances] = useState<CashBalance[]>([]);
   const [showCashDialog, setShowCashDialog] = useState(false);
   const [cashForm, setCashForm] = useState({ currency: "TRY", amount: "", label: "" });
+  type SortKey = "symbol" | "type" | "currentPrice" | "totalQuantity" | "avgCost" | "totalCost" | "totalValue" | "profit" | "profitPercent";
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const loadAssets = useCallback(async () => {
     const res = await fetch("/api/assets");
@@ -166,9 +169,9 @@ export default function PortfolioPage() {
   ];
 
   const typeRowStyle: Record<string, React.CSSProperties> = {
-    BIST:   { backgroundColor: "oklch(0.30 0.05 145)" },
-    US:     { backgroundColor: "oklch(0.30 0.05 255)" },
-    CRYPTO: { backgroundColor: "oklch(0.30 0.06 52)"  },
+    BIST:   { backgroundColor: "oklch(0.48 0.07 145)" },
+    US:     { backgroundColor: "oklch(0.48 0.07 255)" },
+    CRYPTO: { backgroundColor: "oklch(0.48 0.08 52)"  },
   };
   const typeBadgeStyle: Record<string, React.CSSProperties> = {
     BIST:   { borderColor: "oklch(0.55 0.18 145)", color: "oklch(0.72 0.18 145)" },
@@ -176,26 +179,64 @@ export default function PortfolioPage() {
     CRYPTO: { borderColor: "oklch(0.60 0.20 52)",  color: "oklch(0.72 0.20 52)"  },
   };
 
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("desc"); }
+  };
+
+  const SortIcon = ({ k }: { k: SortKey }) => {
+    if (sortKey !== k) return <ArrowUpDown size={12} className="ml-1 opacity-30 inline" />;
+    return sortDir === "asc"
+      ? <ArrowUp size={12} className="ml-1 opacity-80 inline" />
+      : <ArrowDown size={12} className="ml-1 opacity-80 inline" />;
+  };
+
+  const sortedList = (list: AssetWithPrice[]) => {
+    if (!sortKey) return list;
+    return [...list].sort((a, b) => {
+      let av = 0, bv = 0;
+      if (sortKey === "symbol") return sortDir === "asc" ? a.symbol.localeCompare(b.symbol) : b.symbol.localeCompare(a.symbol);
+      if (sortKey === "type")   return sortDir === "asc" ? a.type.localeCompare(b.type) : b.type.localeCompare(a.type);
+      if (sortKey === "currentPrice")  { av = a.currentPrice ?? 0; bv = b.currentPrice ?? 0; }
+      if (sortKey === "totalQuantity") { av = a.totalQuantity; bv = b.totalQuantity; }
+      if (sortKey === "avgCost")       { av = a.type === "BIST" ? (a.avgCostTL ?? 0) : (a.avgCostUSD ?? 0); bv = b.type === "BIST" ? (b.avgCostTL ?? 0) : (b.avgCostUSD ?? 0); }
+      if (sortKey === "totalCost")     { av = a.totalCostUSD; bv = b.totalCostUSD; }
+      if (sortKey === "totalValue")    { av = a.totalValueUSD; bv = b.totalValueUSD; }
+      if (sortKey === "profit")        { av = a.type === "BIST" ? a.totalProfitTL : a.totalProfitUSD; bv = b.type === "BIST" ? b.totalProfitTL : b.totalProfitUSD; }
+      if (sortKey === "profitPercent") { av = a.profitPercent; bv = b.profitPercent; }
+      return sortDir === "asc" ? av - bv : bv - av;
+    });
+  };
+
+  const Th = ({ k, right, children }: { k: SortKey; right?: boolean; children: React.ReactNode }) => (
+    <TableHead
+      className={`${right ? "text-right" : ""} cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap`}
+      onClick={() => handleSort(k)}
+    >
+      {children}<SortIcon k={k} />
+    </TableHead>
+  );
+
   const renderTable = (list: AssetWithPrice[]) => (
     <div className="border rounded-lg overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="w-8"></TableHead>
-            <TableHead>Sembol</TableHead>
-            <TableHead>Tür</TableHead>
-            <TableHead className="text-right">Güncel Fiyat</TableHead>
-            <TableHead className="text-right">Adet</TableHead>
-            <TableHead className="text-right">Ort. Maliyet</TableHead>
-            <TableHead className="text-right">Toplam Maliyet</TableHead>
-            <TableHead className="text-right">Değer</TableHead>
-            <TableHead className="text-right">K/Z</TableHead>
-            <TableHead className="text-right">K/Z (%)</TableHead>
+            <Th k="symbol">Sembol</Th>
+            <Th k="type">Tür</Th>
+            <Th k="currentPrice" right>Güncel Fiyat</Th>
+            <Th k="totalQuantity" right>Adet</Th>
+            <Th k="avgCost" right>Ort. Maliyet</Th>
+            <Th k="totalCost" right>Toplam Maliyet</Th>
+            <Th k="totalValue" right>Değer</Th>
+            <Th k="profit" right>K/Z</Th>
+            <Th k="profitPercent" right>K/Z (%)</Th>
             <TableHead className="w-20"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {list.map((asset) => (
+          {sortedList(list).map((asset) => (
             <Fragment key={asset.id}>
               <TableRow
                 className="cursor-pointer hover:brightness-125 transition-all"
@@ -390,16 +431,16 @@ export default function PortfolioPage() {
         }, 0);
         const cardStyle: Record<string, React.CSSProperties> = {
           BIST: {
-            background: "linear-gradient(135deg, oklch(0.42 0.14 145) 0%, oklch(0.28 0.07 145) 100%)",
-            borderColor: "oklch(0.58 0.20 145)",
+            background: "linear-gradient(135deg, oklch(0.45 0.18 145) 0%, oklch(0.32 0.10 145) 100%)",
+            borderColor: "oklch(0.55 0.20 145)",
           },
           US: {
-            background: "linear-gradient(135deg, oklch(0.40 0.14 255) 0%, oklch(0.28 0.07 255) 100%)",
-            borderColor: "oklch(0.58 0.20 255)",
+            background: "linear-gradient(135deg, oklch(0.42 0.18 255) 0%, oklch(0.30 0.10 255) 100%)",
+            borderColor: "oklch(0.55 0.20 255)",
           },
           CRYPTO: {
-            background: "linear-gradient(135deg, oklch(0.44 0.16 52) 0%, oklch(0.28 0.08 52) 100%)",
-            borderColor: "oklch(0.65 0.22 52)",
+            background: "linear-gradient(135deg, oklch(0.48 0.20 52) 0%, oklch(0.33 0.11 52) 100%)",
+            borderColor: "oklch(0.60 0.22 52)",
           },
         };
         const grandTotalUSD = assetsWithPrice.reduce((s, a) => s + a.totalValueUSD, 0) + cashTotalUSD;
