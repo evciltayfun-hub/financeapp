@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -327,58 +327,74 @@ export default function PortfolioPage() {
       </div>
 
       {/* Summary */}
-      {assets.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {["BIST", "US", "CRYPTO"].map((type) => {
-            const items = assetsWithPrice.filter((a) => a.type === type);
-            const valTL = items.reduce((s, a) => s + a.totalValueTL, 0);
-            const valUSD = items.reduce((s, a) => s + a.totalValueUSD, 0);
-            const costTL = items.reduce((s, a) => s + a.totalCostTL, 0);
-            const costUSD = items.reduce((s, a) => s + a.totalCostUSD, 0);
-            const profitTL = valTL - costTL;
-            const profitUSD = valUSD - costUSD;
-            const pct = type === "BIST"
-              ? (costTL > 0 ? ((valTL - costTL) / costTL) * 100 : 0)
-              : (costUSD > 0 ? ((valUSD - costUSD) / costUSD) * 100 : 0);
-            if (items.length === 0) return null;
-            return (
-              <Card key={type} className="p-3">
-                <p className="text-xs text-muted-foreground">{type}</p>
-                <p className="font-bold">${valUSD.toFixed(2)}</p>
-                <p className="font-bold text-muted-foreground text-sm">{formatCurrency(valTL)}</p>
-                <p className={`text-xs font-medium ${pct >= 0 ? "text-green-600" : "text-red-600"}`}>{formatPercent(pct)}</p>
-                <p className={`text-xs ${profitTL >= 0 ? "text-green-600" : "text-red-600"}`}>
-                  K/Z: {type === "BIST" ? formatCurrency(profitTL) : `$${profitUSD.toFixed(2)}`}
-                </p>
-              </Card>
-            );
-          })}
-          <Card className="p-3">
-            <p className="text-xs text-muted-foreground">Toplam</p>
-            <p className="font-bold">${assetsWithPrice.reduce((s, a) => s + a.totalValueUSD, 0).toFixed(2)}</p>
-            <p className="font-bold text-muted-foreground text-sm">{formatCurrency(assetsWithPrice.reduce((s, a) => s + a.totalValueTL, 0))}</p>
-            {usdTry > 0 && (
-              <p className="text-xs text-muted-foreground mt-0.5">$1 = {usdTry.toFixed(2)} ₺</p>
-            )}
-          </Card>
-          <Card className="p-3">
-            <p className="text-xs text-muted-foreground mb-1">Dağılım</p>
+      {assets.length > 0 && (() => {
+        const cardStyle: Record<string, React.CSSProperties> = {
+          BIST: {
+            background: "linear-gradient(135deg, oklch(0.42 0.14 145) 0%, oklch(0.28 0.07 145) 100%)",
+            borderColor: "oklch(0.58 0.20 145)",
+          },
+          US: {
+            background: "linear-gradient(135deg, oklch(0.40 0.14 255) 0%, oklch(0.28 0.07 255) 100%)",
+            borderColor: "oklch(0.58 0.20 255)",
+          },
+          CRYPTO: {
+            background: "linear-gradient(135deg, oklch(0.44 0.16 52) 0%, oklch(0.28 0.08 52) 100%)",
+            borderColor: "oklch(0.65 0.22 52)",
+          },
+        };
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {["BIST", "US", "CRYPTO"].map((type) => {
               const items = assetsWithPrice.filter((a) => a.type === type);
+              const valTL = items.reduce((s, a) => s + a.totalValueTL, 0);
+              const valUSD = items.reduce((s, a) => s + a.totalValueUSD, 0);
+              const costTL = items.reduce((s, a) => s + a.totalCostTL, 0);
+              const costUSD = items.reduce((s, a) => s + a.totalCostUSD, 0);
+              const profitTL = valTL - costTL;
+              const profitUSD = valUSD - costUSD;
+              const pct = type === "BIST"
+                ? (costTL > 0 ? ((valTL - costTL) / costTL) * 100 : 0)
+                : (costUSD > 0 ? ((valUSD - costUSD) / costUSD) * 100 : 0);
               if (items.length === 0) return null;
-              const val = items.reduce((s, a) => s + a.totalValueTL, 0);
-              const total = assetsWithPrice.reduce((s, a) => s + a.totalValueTL, 0);
-              const pct = total > 0 ? (val / total) * 100 : 0;
               return (
-                <div key={type} className="flex items-center justify-between text-xs py-0.5">
-                  <span className="text-muted-foreground">{type}</span>
-                  <span className="font-medium">{pct.toFixed(1)}%</span>
-                </div>
+                <Card key={type} className="p-4" style={cardStyle[type]}>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-white/50">{type}</p>
+                  <p className="text-2xl font-bold mt-1">${valUSD.toFixed(2)}</p>
+                  <p className="text-base font-semibold text-white/60">{formatCurrency(valTL)}</p>
+                  <p className={`text-sm font-medium mt-1 ${pct >= 0 ? "text-green-400" : "text-red-400"}`}>{formatPercent(pct)}</p>
+                  <p className={`text-sm ${(type === "BIST" ? profitTL : profitUSD) >= 0 ? "text-green-400" : "text-red-400"}`}>
+                    K/Z: {type === "BIST" ? formatCurrency(profitTL) : `$${profitUSD.toFixed(2)}`}
+                  </p>
+                </Card>
               );
             })}
-          </Card>
-        </div>
-      )}
+            <Card className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Toplam</p>
+              <p className="text-2xl font-bold mt-1">${assetsWithPrice.reduce((s, a) => s + a.totalValueUSD, 0).toFixed(2)}</p>
+              <p className="text-base font-semibold text-muted-foreground">{formatCurrency(assetsWithPrice.reduce((s, a) => s + a.totalValueTL, 0))}</p>
+              {usdTry > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">$1 = {usdTry.toFixed(2)} ₺</p>
+              )}
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Dağılım</p>
+              {["BIST", "US", "CRYPTO"].map((type) => {
+                const items = assetsWithPrice.filter((a) => a.type === type);
+                if (items.length === 0) return null;
+                const val = items.reduce((s, a) => s + a.totalValueTL, 0);
+                const total = assetsWithPrice.reduce((s, a) => s + a.totalValueTL, 0);
+                const pct = total > 0 ? (val / total) * 100 : 0;
+                return (
+                  <div key={type} className="flex items-center justify-between text-sm py-0.5">
+                    <span className="text-muted-foreground">{type}</span>
+                    <span className="font-semibold">{pct.toFixed(1)}%</span>
+                  </div>
+                );
+              })}
+            </Card>
+          </div>
+        );
+      })()}
 
       <Tabs defaultValue="ALL">
         <TabsList>
