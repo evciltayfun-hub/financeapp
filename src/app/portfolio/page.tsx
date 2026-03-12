@@ -328,13 +328,15 @@ export default function PortfolioPage() {
 
       {/* Summary */}
       {assets.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {["BIST", "US", "CRYPTO"].map((type) => {
             const items = assetsWithPrice.filter((a) => a.type === type);
             const valTL = items.reduce((s, a) => s + a.totalValueTL, 0);
             const valUSD = items.reduce((s, a) => s + a.totalValueUSD, 0);
             const costTL = items.reduce((s, a) => s + a.totalCostTL, 0);
             const costUSD = items.reduce((s, a) => s + a.totalCostUSD, 0);
+            const profitTL = valTL - costTL;
+            const profitUSD = valUSD - costUSD;
             const pct = type === "BIST"
               ? (costTL > 0 ? ((valTL - costTL) / costTL) * 100 : 0)
               : (costUSD > 0 ? ((valUSD - costUSD) / costUSD) * 100 : 0);
@@ -342,25 +344,38 @@ export default function PortfolioPage() {
             return (
               <Card key={type} className="p-3">
                 <p className="text-xs text-muted-foreground">{type}</p>
-                {type === "BIST" ? (
-                  <p className="font-bold">{formatCurrency(valTL)}</p>
-                ) : (
-                  <>
-                    <p className="font-bold">${valUSD.toFixed(2)}</p>
-                    <p className="font-bold text-muted-foreground">{formatCurrency(valTL)}</p>
-                  </>
-                )}
+                <p className="font-bold">${valUSD.toFixed(2)}</p>
+                <p className="font-bold text-muted-foreground text-sm">{formatCurrency(valTL)}</p>
                 <p className={`text-xs font-medium ${pct >= 0 ? "text-green-600" : "text-red-600"}`}>{formatPercent(pct)}</p>
+                <p className={`text-xs ${profitTL >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  K/Z: {type === "BIST" ? formatCurrency(profitTL) : `$${profitUSD.toFixed(2)}`}
+                </p>
               </Card>
             );
           })}
           <Card className="p-3">
             <p className="text-xs text-muted-foreground">Toplam</p>
             <p className="font-bold">${assetsWithPrice.reduce((s, a) => s + a.totalValueUSD, 0).toFixed(2)}</p>
-            <p className="font-bold text-muted-foreground">{formatCurrency(assetsWithPrice.reduce((s, a) => s + a.totalValueTL, 0))}</p>
+            <p className="font-bold text-muted-foreground text-sm">{formatCurrency(assetsWithPrice.reduce((s, a) => s + a.totalValueTL, 0))}</p>
             {usdTry > 0 && (
               <p className="text-xs text-muted-foreground mt-0.5">$1 = {usdTry.toFixed(2)} ₺</p>
             )}
+          </Card>
+          <Card className="p-3">
+            <p className="text-xs text-muted-foreground mb-1">Dağılım</p>
+            {["BIST", "US", "CRYPTO"].map((type) => {
+              const items = assetsWithPrice.filter((a) => a.type === type);
+              if (items.length === 0) return null;
+              const val = items.reduce((s, a) => s + a.totalValueTL, 0);
+              const total = assetsWithPrice.reduce((s, a) => s + a.totalValueTL, 0);
+              const pct = total > 0 ? (val / total) * 100 : 0;
+              return (
+                <div key={type} className="flex items-center justify-between text-xs py-0.5">
+                  <span className="text-muted-foreground">{type}</span>
+                  <span className="font-medium">{pct.toFixed(1)}%</span>
+                </div>
+              );
+            })}
           </Card>
         </div>
       )}
