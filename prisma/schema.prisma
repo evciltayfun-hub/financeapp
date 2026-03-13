@@ -71,3 +71,13 @@ model PortfolioNote {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model WatchlistItem {
+  id        String   @id @default(cuid())
+  symbol    String
+  type      String   // BIST | US | CRYPTO
+  name      String
+  createdAt DateTime @default(now())
+
+  @@unique([symbol, type])
+}

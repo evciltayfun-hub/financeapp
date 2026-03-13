@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { TrendingUp, PlusCircle, Eye, EyeOff } from "lucide-react";
+import { TrendingUp, PlusCircle, Eye, EyeOff, LineChart } from "lucide-react";
 import { usePrivacy } from "@/lib/privacy-context";
 
 const navItems = [
   { href: "/portfolio", label: "Portföy", icon: TrendingUp },
+  { href: "/watchlist", label: "Takip", icon: LineChart },
 ];
 
 export default function Navbar() {
