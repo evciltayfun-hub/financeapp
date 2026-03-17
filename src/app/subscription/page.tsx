@@ -74,6 +74,9 @@ export default function SubscriptionPage() {
   const activeSubs = useMemo(() => subs.filter((s) => s.isActive), [subs]);
   const monthlyTotal = activeSubs.reduce((a, s) => a + toMonthlyTRY(s), 0);
   const yearlyTotal = monthlyTotal * 12;
+  const monthlyOnlyTotal = activeSubs
+    .filter((s) => s.period === "monthly")
+    .reduce((a, s) => a + toMonthlyTRY(s), 0);
 
   const catTotals = activeSubs.reduce<Record<string, number>>((acc, s) => {
     acc[s.category] = (acc[s.category] ?? 0) + toMonthlyTRY(s);
@@ -170,8 +173,14 @@ export default function SubscriptionPage() {
           {/* Özet kartlar */}
           <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4 space-y-4">
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Aylık toplam</p>
+              <p className="text-xs text-muted-foreground mb-1">Aylık ödemeler</p>
+              <p className="text-2xl font-bold">{H(fmtTRY(monthlyOnlyTotal))}</p>
+              <p className="text-[10px] text-muted-foreground/60 mt-0.5">Sadece aylık üyelikler</p>
+            </div>
+            <div className="border-t border-white/6 pt-4">
+              <p className="text-xs text-muted-foreground mb-1">Aylık eşdeğer</p>
               <p className="text-2xl font-bold">{H(fmtTRY(monthlyTotal))}</p>
+              <p className="text-[10px] text-muted-foreground/60 mt-0.5">Yıllıklar dahil (÷12)</p>
             </div>
             <div className="border-t border-white/6 pt-4">
               <p className="text-xs text-muted-foreground mb-1">Yıllık toplam</p>
