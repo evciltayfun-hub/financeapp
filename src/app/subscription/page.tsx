@@ -138,14 +138,14 @@ export default function SubscriptionPage() {
 
   if (loading) {
     return (
-      <div className="px-6 py-16 flex items-center justify-center">
+      <div className="max-w-7xl mx-auto px-4 py-16 flex items-center justify-center">
         <div className="text-muted-foreground text-sm">Yükleniyor...</div>
       </div>
     );
   }
 
   return (
-    <div className="px-6 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
