@@ -138,17 +138,17 @@ export default function SubscriptionPage() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-16 flex items-center justify-center">
+      <div className="px-6 py-16 flex items-center justify-center">
         <div className="text-muted-foreground text-sm">Yükleniyor...</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+    <div className="px-6 py-8">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Abonelikler</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{activeSubs.length} aktif · {subs.length} toplam</p>
@@ -162,200 +162,177 @@ export default function SubscriptionPage() {
         </button>
       </div>
 
-      {/* Özet kartlar */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4">
-          <p className="text-xs text-muted-foreground mb-2">Aylık toplam</p>
-          <p className="text-2xl font-bold">{H(fmtTRY(monthlyTotal))}</p>
-        </div>
-        <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4">
-          <p className="text-xs text-muted-foreground mb-2">Yıllık toplam</p>
-          <p className="text-2xl font-bold">{H(fmtTRY(yearlyTotal))}</p>
-        </div>
-        <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4">
-          <p className="text-xs text-muted-foreground mb-2">Günlük ortalama</p>
-          <p className="text-2xl font-bold">{H(fmtTRY(monthlyTotal / 30))}</p>
-        </div>
-      </div>
+      {/* Ana layout: sol panel + sağ liste */}
+      <div className="flex gap-6 items-start">
 
-      {/* Kategori dağılımı */}
-      {Object.keys(catTotals).length > 0 && (
-        <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4 space-y-3">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Kategori dağılımı</p>
-          {Object.entries(catTotals)
-            .sort((a, b) => b[1] - a[1])
-            .map(([cat, val]) => {
-              const cfg = CAT_CONFIG[cat as Category] ?? CAT_CONFIG["Diğer"];
-              const pct = Math.round((val / maxCat) * 100);
+        {/* SOL: özet + kategori dağılımı */}
+        <div className="w-72 shrink-0 space-y-4">
+          {/* Özet kartlar */}
+          <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4 space-y-4">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Aylık toplam</p>
+              <p className="text-2xl font-bold">{H(fmtTRY(monthlyTotal))}</p>
+            </div>
+            <div className="border-t border-white/6 pt-4">
+              <p className="text-xs text-muted-foreground mb-1">Yıllık toplam</p>
+              <p className="text-2xl font-bold">{H(fmtTRY(yearlyTotal))}</p>
+            </div>
+          </div>
+
+          {/* Kategori dağılımı */}
+          {Object.keys(catTotals).length > 0 && (
+            <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4 space-y-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Kategori dağılımı</p>
+              {Object.entries(catTotals)
+                .sort((a, b) => b[1] - a[1])
+                .map(([cat, val]) => {
+                  const cfg = CAT_CONFIG[cat as Category] ?? CAT_CONFIG["Diğer"];
+                  const pct = Math.round((val / maxCat) * 100);
+                  return (
+                    <div key={cat}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <span style={{ color: cfg.color }}>{cfg.icon}</span>
+                          <span className="text-xs text-muted-foreground truncate max-w-[110px]">{cat}</span>
+                        </div>
+                        <span className="text-xs tabular-nums text-muted-foreground">{H(fmtTRY(val))}</span>
+                      </div>
+                      <div className="bg-white/5 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${pct}%`, background: cfg.color }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+
+        {/* SAĞ: filtreler + liste */}
+        <div className="flex-1 min-w-0 space-y-4">
+          {/* Filtreler */}
+          <div className="flex flex-wrap items-center gap-2">
+            {(["all", "monthly", "yearly"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setPeriodFilter(v)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  periodFilter === v ? "bg-white text-black" : "bg-white/6 text-muted-foreground hover:text-foreground hover:bg-white/10"
+                )}
+              >
+                {v === "all" ? "Tümü" : v === "monthly" ? "Aylık" : "Yıllık"}
+              </button>
+            ))}
+            <div className="w-px h-4 bg-white/10 mx-1" />
+            {["all", ...CATEGORIES].map((c) => (
+              <button
+                key={c}
+                onClick={() => setCatFilter(c)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  catFilter === c ? "bg-white text-black" : "bg-white/6 text-muted-foreground hover:text-foreground hover:bg-white/10"
+                )}
+              >
+                {c === "all" ? "Tümü" : c}
+              </button>
+            ))}
+            <div className="flex-1" />
+            <button
+              onClick={() => setOnlyActive(!onlyActive)}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                onlyActive ? "bg-white text-black" : "bg-white/6 text-muted-foreground hover:text-foreground hover:bg-white/10"
+              )}
+            >
+              Sadece aktif
+            </button>
+            <select
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value as SortKey)}
+              className="text-xs border border-white/10 rounded-lg px-2 py-1.5 bg-white/6 text-muted-foreground"
+            >
+              <option value="default">Son eklenen</option>
+              <option value="name">Ad (A-Z)</option>
+              <option value="price_desc">Fiyat ↓</option>
+              <option value="price_asc">Fiyat ↑</option>
+            </select>
+          </div>
+
+          {/* Liste */}
+          <div className="space-y-2">
+            {filtered.length === 0 && (
+              <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] py-12 text-center text-sm text-muted-foreground">
+                Abonelik bulunamadı
+              </div>
+            )}
+            {filtered.map((s) => {
+              const cfg = CAT_CONFIG[s.category as Category] ?? CAT_CONFIG["Diğer"];
+              const monthlyTRY = toMonthlyTRY(s);
               return (
-                <div key={cat} className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 w-40 shrink-0">
-                    <span style={{ color: cfg.color }}>{cfg.icon}</span>
-                    <span className="text-sm text-muted-foreground truncate">{cat}</span>
+                <div
+                  key={s.id}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] transition-opacity group",
+                    !s.isActive && "opacity-40"
+                  )}
+                >
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: cfg.bg, color: cfg.color }}
+                  >
+                    {cfg.icon}
                   </div>
-                  <div className="flex-1 bg-white/5 rounded-full h-2 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${pct}%`, background: cfg.color }}
-                    />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{s.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: cfg.bg, color: cfg.color }}>
+                        {s.category}
+                      </span>
+                      <span>·</span>
+                      <span>{s.period === "monthly" ? "Aylık" : "Yıllık"}</span>
+                    </p>
                   </div>
-                  <span className="text-sm text-right shrink-0 w-24 tabular-nums text-muted-foreground">
-                    {H(fmtTRY(val))}<span className="text-xs">/ay</span>
-                  </span>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold tabular-nums">
+                      {H(`${s.currency}${s.price.toLocaleString("tr-TR")}`)}
+                      <span className="text-xs text-muted-foreground font-normal ml-1">/{s.period === "monthly" ? "ay" : "yıl"}</span>
+                    </p>
+                    {s.period === "yearly" && (
+                      <p className="text-xs text-muted-foreground tabular-nums">{H(fmtTRY(monthlyTRY))}/ay</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => openEdit(s)} title="Düzenle" className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/8 transition-colors">
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => handleToggleActive(s)}
+                      title={s.isActive ? "Deaktif et" : "Aktif et"}
+                      className={cn("p-1.5 rounded-lg transition-colors", s.isActive ? "text-green-400 hover:text-green-300 hover:bg-white/8" : "text-muted-foreground hover:text-foreground hover:bg-white/8")}
+                    >
+                      <Power size={13} />
+                    </button>
+                    <button onClick={() => handleDelete(s.id)} className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-white/8 transition-colors text-xs">✕</button>
+                  </div>
                 </div>
               );
             })}
-        </div>
-      )}
 
-      {/* Filtreler */}
-      <div className="flex flex-wrap items-center gap-2">
-        {(["all", "monthly", "yearly"] as const).map((v) => (
-          <button
-            key={v}
-            onClick={() => setPeriodFilter(v)}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-              periodFilter === v ? "bg-white text-black" : "bg-white/6 text-muted-foreground hover:text-foreground hover:bg-white/10"
-            )}
-          >
-            {v === "all" ? "Tümü" : v === "monthly" ? "Aylık" : "Yıllık"}
-          </button>
-        ))}
-        <div className="w-px h-4 bg-white/10 mx-1" />
-        {["all", ...CATEGORIES].map((c) => (
-          <button
-            key={c}
-            onClick={() => setCatFilter(c)}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-              catFilter === c ? "bg-white text-black" : "bg-white/6 text-muted-foreground hover:text-foreground hover:bg-white/10"
-            )}
-          >
-            {c === "all" ? "Tüm kategoriler" : c}
-          </button>
-        ))}
-        <div className="flex-1" />
-        <button
-          onClick={() => setOnlyActive(!onlyActive)}
-          className={cn(
-            "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-            onlyActive ? "bg-white text-black" : "bg-white/6 text-muted-foreground hover:text-foreground hover:bg-white/10"
-          )}
-        >
-          Sadece aktif
-        </button>
-        <select
-          value={sortKey}
-          onChange={(e) => setSortKey(e.target.value as SortKey)}
-          className="text-xs border border-white/10 rounded-lg px-2 py-1.5 bg-white/6 text-muted-foreground"
-        >
-          <option value="default">Son eklenen</option>
-          <option value="name">Ad (A-Z)</option>
-          <option value="price_desc">Fiyat ↓</option>
-          <option value="price_asc">Fiyat ↑</option>
-        </select>
-      </div>
-
-      {/* Liste */}
-      <div className="space-y-2">
-        {filtered.length === 0 && (
-          <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] py-12 text-center text-sm text-muted-foreground">
-            Abonelik bulunamadı
-          </div>
-        )}
-        {filtered.map((s) => {
-          const cfg = CAT_CONFIG[s.category as Category] ?? CAT_CONFIG["Diğer"];
-          const monthlyTRY = toMonthlyTRY(s);
-          return (
-            <div
-              key={s.id}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] transition-opacity group",
-                !s.isActive && "opacity-40"
-              )}
-            >
-              {/* İkon */}
-              <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: cfg.bg, color: cfg.color }}
+            {filtered.length > 0 && (
+              <button
+                onClick={openAdd}
+                className="w-full py-3 rounded-xl border border-dashed border-white/15 text-sm text-muted-foreground hover:bg-white/4 hover:border-white/25 transition-colors flex items-center justify-center gap-2"
               >
-                {cfg.icon}
-              </div>
-
-              {/* Bilgi */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{s.name}</p>
-                <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                  <span
-                    className="px-1.5 py-0.5 rounded text-[10px] font-medium"
-                    style={{ background: cfg.bg, color: cfg.color }}
-                  >
-                    {s.category}
-                  </span>
-                  <span>·</span>
-                  <span>{s.period === "monthly" ? "Aylık" : "Yıllık"}</span>
-                </p>
-              </div>
-
-              {/* Fiyat */}
-              <div className="text-right shrink-0">
-                <p className="text-sm font-semibold tabular-nums">
-                  {H(`${s.currency}${s.price.toLocaleString("tr-TR")}`)}
-                  <span className="text-xs text-muted-foreground font-normal ml-1">
-                    /{s.period === "monthly" ? "ay" : "yıl"}
-                  </span>
-                </p>
-                {s.period === "yearly" && (
-                  <p className="text-xs text-muted-foreground tabular-nums">
-                    {H(fmtTRY(monthlyTRY))}/ay
-                  </p>
-                )}
-              </div>
-
-              {/* Aksiyonlar */}
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => openEdit(s)}
-                  title="Düzenle"
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/8 transition-colors"
-                >
-                  <Pencil size={13} />
-                </button>
-                <button
-                  onClick={() => handleToggleActive(s)}
-                  title={s.isActive ? "Deaktif et" : "Aktif et"}
-                  className={cn(
-                    "p-1.5 rounded-lg transition-colors",
-                    s.isActive
-                      ? "text-green-400 hover:text-green-300 hover:bg-white/8"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/8"
-                  )}
-                >
-                  <Power size={13} />
-                </button>
-                <button
-                  onClick={() => handleDelete(s.id)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-white/8 transition-colors text-xs"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          );
-        })}
+                <Plus size={14} />
+                Yeni abonelik ekle
+              </button>
+            )}
+          </div>
+        </div>
       </div>
-
-      {/* Yeni ekle butonu (alt) */}
-      {filtered.length > 0 && (
-        <button
-          onClick={openAdd}
-          className="w-full py-3 rounded-xl border border-dashed border-white/15 text-sm text-muted-foreground hover:bg-white/4 hover:border-white/25 transition-colors flex items-center justify-center gap-2"
-        >
-          <Plus size={14} />
-          Yeni abonelik ekle
-        </button>
-      )}
 
       {/* Modal */}
       {modalOpen && (
