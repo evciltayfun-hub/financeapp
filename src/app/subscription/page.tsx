@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Pencil, Power, Plus, Tv, Cloud, Code2, ShieldCheck, Layers } from "lucide-react";
+import { Pencil, Power, Plus, Tv, Cloud, Code2, ShieldCheck, Layers, Zap } from "lucide-react";
 import { usePrivacy } from "@/lib/privacy-context";
 import { cn } from "@/lib/utils";
 
 const HIDDEN = "••••••";
 
-const CATEGORIES = ["Streaming", "Yazılım/SaaS", "Bulut/Depolama", "Bireysel Emeklilik", "Diğer"] as const;
+const CATEGORIES = ["Streaming", "Yazılım/SaaS", "Bulut/Depolama", "Bireysel Emeklilik", "Utilities", "Diğer"] as const;
 type Category = (typeof CATEGORIES)[number];
 
 const CAT_CONFIG: Record<Category, { color: string; bg: string; icon: React.ReactNode }> = {
@@ -15,6 +15,7 @@ const CAT_CONFIG: Record<Category, { color: string; bg: string; icon: React.Reac
   "Yazılım/SaaS":       { color: "#a78bfa", bg: "rgba(167,139,250,0.12)", icon: <Code2 size={14} /> },
   "Bulut/Depolama":     { color: "#34d399", bg: "rgba(52,211,153,0.12)",  icon: <Cloud size={14} /> },
   "Bireysel Emeklilik": { color: "#fbbf24", bg: "rgba(251,191,36,0.12)",  icon: <ShieldCheck size={14} /> },
+  Utilities:            { color: "#f87171", bg: "rgba(248,113,113,0.12)", icon: <Zap size={14} /> },
   Diğer:                { color: "#9ca3af", bg: "rgba(156,163,175,0.12)", icon: <Layers size={14} /> },
 };
 
