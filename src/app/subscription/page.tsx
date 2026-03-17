@@ -24,6 +24,8 @@ const RATES: Record<string, number> = { "₺": 1, $: 44, "€": 48, "£": 56 };
 type SortKey = "default" | "name" | "price_desc" | "price_asc";
 type PeriodFilter = "all" | "monthly" | "yearly";
 
+const MONTHS = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+
 type Sub = {
   id: string;
   name: string;
@@ -31,6 +33,7 @@ type Sub = {
   price: number;
   currency: string;
   period: string;
+  paymentMonth: number | null;
   isActive: boolean;
 };
 
@@ -41,9 +44,10 @@ type ModalForm = {
   price: string;
   currency: string;
   period: string;
+  paymentMonth: string;
 };
 
-const EMPTY: ModalForm = { name: "", category: "Streaming", price: "", currency: "₺", period: "monthly" };
+const EMPTY: ModalForm = { name: "", category: "Streaming", price: "", currency: "₺", period: "monthly", paymentMonth: "" };
 
 function fmtTRY(val: number) {
   return `₺${Math.round(val).toLocaleString("tr-TR")}`;
@@ -97,7 +101,7 @@ export default function SubscriptionPage() {
 
   function openAdd() { setForm(EMPTY); setModalOpen(true); }
   function openEdit(s: Sub) {
-    setForm({ id: s.id, name: s.name, category: s.category, price: String(s.price), currency: s.currency, period: s.period });
+    setForm({ id: s.id, name: s.name, category: s.category, price: String(s.price), currency: s.currency, period: s.period, paymentMonth: s.paymentMonth ? String(s.paymentMonth) : "" });
     setModalOpen(true);
   }
 
@@ -107,7 +111,7 @@ export default function SubscriptionPage() {
       const res = await fetch("/api/subscriptions", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: form.id, name: form.name, category: form.category, price: Number(form.price), currency: form.currency, period: form.period }),
+        body: JSON.stringify({ id: form.id, name: form.name, category: form.category, price: Number(form.price), currency: form.currency, period: form.period, paymentMonth: form.period === "yearly" && form.paymentMonth ? Number(form.paymentMonth) : null }),
       });
       const updated = await res.json();
       setSubs((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
@@ -115,7 +119,7 @@ export default function SubscriptionPage() {
       const res = await fetch("/api/subscriptions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, price: Number(form.price) }),
+        body: JSON.stringify({ ...form, price: Number(form.price), paymentMonth: form.period === "yearly" && form.paymentMonth ? Number(form.paymentMonth) : null }),
       });
       const created = await res.json();
       setSubs((prev) => [created, ...prev]);
@@ -393,7 +397,7 @@ export default function SubscriptionPage() {
                 {(["monthly", "yearly"] as const).map((p) => (
                   <button
                     key={p}
-                    onClick={() => setForm({ ...form, period: p })}
+                    onClick={() => setForm({ ...form, period: p, paymentMonth: "" })}
                     className={cn(
                       "py-2.5 rounded-xl text-sm font-medium transition-colors border",
                       form.period === p
@@ -405,6 +409,19 @@ export default function SubscriptionPage() {
                   </button>
                 ))}
               </div>
+
+              {form.period === "yearly" && (
+                <select
+                  className="w-full border border-white/10 rounded-xl px-4 py-2.5 text-sm bg-[oklch(0.26_0_0)]"
+                  value={form.paymentMonth}
+                  onChange={(e) => setForm({ ...form, paymentMonth: e.target.value })}
+                >
+                  <option value="">Ödeme ayı seç (opsiyonel)</option>
+                  {MONTHS.map((m, i) => (
+                    <option key={i + 1} value={i + 1}>{m}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="flex gap-2 pt-1">

@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Fragment } from "react";
 import { Asset, PriceData, AssetWithPrice, Lot } from "@/lib/types";
 import { computeAssetWithPrice, formatCurrency, formatPercent, formatNumber } from "@/lib/utils";
-import { RefreshCw, Trash2, PlusCircle, ChevronDown, ChevronRight, Wallet, ArrowUpDown, ArrowUp, ArrowDown, StickyNote, Send } from "lucide-react";
+import { RefreshCw, Trash2, PlusCircle, ChevronDown, ChevronRight, Wallet, ArrowUpDown, ArrowUp, ArrowDown, StickyNote, Send, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { usePrivacy } from "@/lib/privacy-context";
@@ -44,6 +44,11 @@ export default function PortfolioPage() {
   type SortKey = "symbol" | "type" | "currentPrice" | "totalQuantity" | "avgCost" | "totalCost" | "totalValue" | "profit" | "profitPercent";
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [editLotFor, setEditLotFor] = useState<Lot | null>(null);
+  const [editLotAssetType, setEditLotAssetType] = useState("BIST");
+  const [editLotForm, setEditLotForm] = useState({ quantity: "", costPrice: "", purchaseDate: "", note: "" });
+  const [editAssetFor, setEditAssetFor] = useState<AssetWithPrice | null>(null);
+  const [editAssetName, setEditAssetName] = useState("");
   const { hidden } = usePrivacy();
   const H = (val: string) => hidden ? HIDDEN : val;
 
@@ -178,6 +183,54 @@ export default function PortfolioPage() {
       await fetchPrices(list);
     } else {
       toast.error("Lot eklenemedi");
+    }
+  };
+
+  const openEditLot = (lot: Lot, assetType: string) => {
+    setEditLotFor(lot);
+    setEditLotAssetType(assetType);
+    const costPrice = assetType === "BIST" ? (lot.costPriceTL ?? "") : (lot.costPriceUSD ?? "");
+    const dateStr = lot.purchaseDate ? new Date(lot.purchaseDate).toISOString().split("T")[0] : "";
+    setEditLotForm({ quantity: String(lot.quantity), costPrice: costPrice !== "" ? String(costPrice) : "", purchaseDate: dateStr, note: lot.note ?? "" });
+  };
+
+  const updateLot = async () => {
+    if (!editLotFor || !editLotForm.quantity) return;
+    const isBIST = editLotAssetType === "BIST";
+    const res = await fetch(`/api/lots/${editLotFor.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        quantity: editLotForm.quantity,
+        purchaseDate: editLotForm.purchaseDate || undefined,
+        note: editLotForm.note,
+        costPriceTL: isBIST ? (editLotForm.costPrice || null) : undefined,
+        costPriceUSD: !isBIST ? (editLotForm.costPrice || null) : undefined,
+      }),
+    });
+    if (res.ok) {
+      toast.success("Lot güncellendi");
+      setEditLotFor(null);
+      const list = await loadAssets();
+      await fetchPrices(list);
+    } else {
+      toast.error("Güncellenemedi");
+    }
+  };
+
+  const updateAsset = async () => {
+    if (!editAssetFor || !editAssetName.trim()) return;
+    const res = await fetch(`/api/assets/${editAssetFor.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editAssetName }),
+    });
+    if (res.ok) {
+      toast.success("Varlık güncellendi");
+      setEditAssetFor(null);
+      await loadAssets();
+    } else {
+      toast.error("Güncellenemedi");
     }
   };
 
@@ -352,6 +405,9 @@ export default function PortfolioPage() {
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAddLotFor(asset)}>
                       <PlusCircle size={13} />
                     </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditAssetFor(asset); setEditAssetName(asset.name); }}>
+                      <Pencil size={13} />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteAsset(asset.id)}>
                       <Trash2 size={13} />
                     </Button>
@@ -395,9 +451,14 @@ export default function PortfolioPage() {
                       {lotPct !== null ? H(formatPercent(lotPct)) : "—"}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteLot(lot.id)}>
-                        <Trash2 size={12} />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditLot(lot, asset.type)}>
+                          <Pencil size={12} />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteLot(lot.id)}>
+                          <Trash2 size={12} />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -678,6 +739,76 @@ export default function PortfolioPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddLotFor(null)}>İptal</Button>
             <Button onClick={addLot} disabled={!lotForm.quantity}>Ekle</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Lot Dialog */}
+      <Dialog open={!!editLotFor} onOpenChange={(open) => !open && setEditLotFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lot Düzenle</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Adet / Miktar *</Label>
+                <Input
+                  type="number"
+                  value={editLotForm.quantity}
+                  onChange={(e) => setEditLotForm((f) => ({ ...f, quantity: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Alış Tarihi</Label>
+                <Input
+                  type="date"
+                  value={editLotForm.purchaseDate}
+                  onChange={(e) => setEditLotForm((f) => ({ ...f, purchaseDate: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Alış Fiyatı {editLotAssetType === "BIST" ? "(₺)" : "($)"}</Label>
+              <Input
+                type="number"
+                value={editLotForm.costPrice}
+                onChange={(e) => setEditLotForm((f) => ({ ...f, costPrice: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Not (opsiyonel)</Label>
+              <Input
+                value={editLotForm.note}
+                onChange={(e) => setEditLotForm((f) => ({ ...f, note: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditLotFor(null)}>İptal</Button>
+            <Button onClick={updateLot} disabled={!editLotForm.quantity}>Kaydet</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Asset Dialog */}
+      <Dialog open={!!editAssetFor} onOpenChange={(open) => !open && setEditAssetFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Varlık Düzenle — {editAssetFor?.symbol}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>İsim</Label>
+              <Input
+                value={editAssetName}
+                onChange={(e) => setEditAssetName(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditAssetFor(null)}>İptal</Button>
+            <Button onClick={updateAsset} disabled={!editAssetName.trim()}>Kaydet</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

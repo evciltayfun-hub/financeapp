@@ -81,3 +81,28 @@ model WatchlistItem {
 
   @@unique([symbol, type])
 }
+
+model Subscription {
+  id           String   @id @default(cuid())
+  name         String
+  category     String
+  price        Float
+  currency     String   @default("₺")
+  period       String   // "monthly" | "yearly"
+  paymentMonth Int?     // 1-12, only for yearly
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model MonthlyBudget {
+  id            String   @id @default(cuid())
+  year          Int
+  month         Int      // 1-12
+  salary        Float    @default(0)
+  otherExpenses Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([year, month])
+}
