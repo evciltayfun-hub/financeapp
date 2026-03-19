@@ -8,11 +8,18 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  const { year, month, salary, otherExpenses } = await req.json();
+  const { year, month, salary, extraIncome, carryover, otherExpenses, investment, note } = await req.json();
   const row = await prisma.monthlyBudget.upsert({
     where: { year_month: { year, month } },
-    update: { salary: salary ?? undefined, otherExpenses: otherExpenses ?? undefined },
-    create: { year, month, salary: salary ?? 0, otherExpenses: otherExpenses ?? 0 },
+    update: {
+      salary: salary ?? undefined,
+      extraIncome: extraIncome ?? undefined,
+      carryover: carryover ?? undefined,
+      otherExpenses: otherExpenses ?? undefined,
+      investment: investment ?? undefined,
+      note: note !== undefined ? note : undefined,
+    },
+    create: { year, month, salary: salary ?? 0, extraIncome: extraIncome ?? 0, carryover: carryover ?? 0, otherExpenses: otherExpenses ?? 0, investment: investment ?? 0, note: note ?? null },
   });
   return NextResponse.json(row);
 }

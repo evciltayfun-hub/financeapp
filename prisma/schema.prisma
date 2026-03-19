@@ -83,24 +83,30 @@ model WatchlistItem {
 }
 
 model Subscription {
-  id           String   @id @default(cuid())
-  name         String
-  category     String
-  price        Float
-  currency     String   @default("₺")
-  period       String   // "monthly" | "yearly"
-  paymentMonth Int?     // 1-12, only for yearly
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  category        String
+  price           Float
+  currency        String   @default("₺")
+  period          String   // "monthly" | "yearly"
+  paymentMonth    Int?     // 1-12, only for yearly
+  isActive        Boolean  @default(true)
+  activatedFrom   Int?     // yyyymm — month from which active (null = always)
+  deactivatedFrom Int?     // yyyymm — month from which inactive (null = always inactive if !isActive)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model MonthlyBudget {
   id            String   @id @default(cuid())
   year          Int
   month         Int      // 1-12
+  carryover     Float    @default(0)  // Önceki aydan devir
   salary        Float    @default(0)
+  extraIncome   Float    @default(0)  // Ek gelir
   otherExpenses Float    @default(0)
+  investment    Float    @default(0)  // Yatırıma aktarılacak
+  note          String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

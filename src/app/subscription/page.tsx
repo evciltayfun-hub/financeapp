@@ -35,6 +35,8 @@ type Sub = {
   period: string;
   paymentMonth: number | null;
   isActive: boolean;
+  activatedFrom: number | null;
+  deactivatedFrom: number | null;
 };
 
 type ModalForm = {
@@ -129,10 +131,17 @@ export default function SubscriptionPage() {
   }
 
   async function handleToggleActive(s: Sub) {
+    const now = new Date();
+    const ym = now.getFullYear() * 100 + (now.getMonth() + 1);
+    const willBeActive = !s.isActive;
+    const payload = willBeActive
+      ? { id: s.id, isActive: true, activatedFrom: ym, deactivatedFrom: null }
+      : { id: s.id, isActive: false, deactivatedFrom: ym };
+      // Note: activatedFrom is intentionally NOT cleared on deactivation
     const res = await fetch("/api/subscriptions", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: s.id, isActive: !s.isActive }),
+      body: JSON.stringify(payload),
     });
     const updated = await res.json();
     setSubs((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
