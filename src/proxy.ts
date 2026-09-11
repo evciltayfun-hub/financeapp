@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authToken, AUTH_COOKIE } from "@/lib/auth";
 
-const PUBLIC_PATHS = ["/login", "/api/login", "/api/admin/import"];
+// /api/admin/* routes are protected by IMPORT_SECRET instead of the cookie
+const PUBLIC_PATHS = ["/login", "/api/login", "/api/admin/import", "/api/admin/export"];
 
 export async function proxy(req: NextRequest) {
   const appPassword = process.env.APP_PASSWORD;
