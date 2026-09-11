@@ -84,8 +84,8 @@ function daysUntil(start: string | null): number | null {
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 border border-white/15 rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 sticky top-0 bg-slate-900">
+      <div className="bg-card border border-white/15 rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 sticky top-0 bg-card">
           <h2 className="font-semibold text-white">{title}</h2>
           <button onClick={onClose} className="text-white/40 hover:text-white/80 transition-colors"><X size={18} /></button>
         </div>
@@ -112,7 +112,7 @@ const EMPTY_EXP:  ExpFormData  = { category: "uçak", description: "", amount: "
 function TripForm({ form, setForm, onSubmit, onCancel }: {
   form: TripFormData; setForm: (f: TripFormData) => void; onSubmit: () => void; onCancel: () => void;
 }) {
-  const inp = "w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition-colors";
+  const inp = "w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-primary transition-colors";
   const lbl = "block text-xs text-white/50 mb-1";
   return (
     <div className="space-y-3">
@@ -160,7 +160,7 @@ function TripForm({ form, setForm, onSubmit, onCancel }: {
       </div>
       <div className="flex justify-end gap-2 pt-1">
         <button onClick={onCancel} className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors">İptal</button>
-        <button onClick={onSubmit} disabled={!form.title || !form.destination} className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-400 disabled:opacity-40 text-white rounded-lg transition-colors">Kaydet</button>
+        <button onClick={onSubmit} disabled={!form.title || !form.destination} className="px-4 py-2 text-sm bg-primary hover:bg-primary/90 disabled:opacity-40 text-primary-foreground font-semibold rounded-lg transition-colors">Kaydet</button>
       </div>
     </div>
   );
@@ -225,7 +225,7 @@ function buildIncItems(category: string, savingsData: string | null): IncItem[] 
 function ExpenseForm({ form, setForm, onSubmit, onCancel, tripDays }: {
   form: ExpFormData; setForm: React.Dispatch<React.SetStateAction<ExpFormData>>; onSubmit: () => void; onCancel: () => void; tripDays: number | null;
 }) {
-  const inp = "w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition-colors";
+  const inp = "w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-primary transition-colors";
   const lbl = "block text-xs text-white/50 mb-1";
 
   const isHotel = form.category === "konaklama";
@@ -359,7 +359,7 @@ function ExpenseForm({ form, setForm, onSubmit, onCancel, tripDays }: {
               <span>Konaklama süresi (gün):</span>
               <input type="number" value={incDays} onChange={e => updateIncDays(e.target.value)}
                 placeholder={tripDays?.toString() ?? "1"}
-                className="w-12 bg-white/5 border border-white/15 rounded px-1.5 py-0.5 text-center text-white text-xs focus:outline-none focus:border-blue-400 transition-colors" />
+                className="w-12 bg-white/5 border border-white/15 rounded px-1.5 py-0.5 text-center text-white text-xs focus:outline-none focus:border-primary transition-colors" />
             </div>
           )}
         </div>
@@ -452,7 +452,7 @@ function ExpenseForm({ form, setForm, onSubmit, onCancel, tripDays }: {
       <div className="flex justify-end gap-2 pt-1">
         <button onClick={onCancel} className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors">İptal</button>
         <button onClick={onSubmit} disabled={!form.description || !form.amount}
-          className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-400 disabled:opacity-40 text-white rounded-lg transition-colors">
+          className="px-4 py-2 text-sm bg-primary hover:bg-primary/90 disabled:opacity-40 text-primary-foreground font-semibold rounded-lg transition-colors">
           Kaydet
         </button>
       </div>
@@ -631,16 +631,16 @@ export default function PlannerPage() {
   const daysLeft  = selectedTrip ? daysUntil(selectedTrip.startDate) : null;
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white overflow-hidden">
+    <div className="flex h-[calc(100vh-3.5rem)] bg-background text-foreground overflow-hidden">
 
       {/* ── LEFT SIDEBAR ── */}
-      <aside className="w-72 flex-shrink-0 border-r border-white/10 flex flex-col bg-black/20">
+      <aside className="w-72 flex-shrink-0 border-r border-border flex flex-col bg-card/60">
         <div className="p-4 border-b border-white/10">
           <div className="flex items-center justify-between mb-3">
             <h1 className="font-bold text-sm flex items-center gap-2">🧳 Seyahat Planlayıcı</h1>
             <button
               onClick={() => { setTripForm(EMPTY_TRIP); setTripModal("add"); }}
-              className="bg-blue-500 hover:bg-blue-400 text-white rounded-lg px-2.5 py-1.5 text-xs font-medium flex items-center gap-1 transition-colors"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-2.5 py-1.5 text-xs font-medium flex items-center gap-1 transition-colors"
             >
               <Plus size={12} /> Yeni Gezi
             </button>
@@ -871,7 +871,7 @@ export default function PlannerPage() {
                       } catch {}
                     }
                     return (
-                      <div key={exp.id} className="border border-white/8 rounded-lg overflow-hidden">
+                      <div key={exp.id} className="border border-border rounded-lg overflow-hidden">
                         {/* Header row */}
                         <div className="flex items-center gap-3 px-3 py-2 bg-white/3">
                           <span className="text-sm flex-shrink-0">{cat.emoji}</span>
@@ -962,7 +962,7 @@ export default function PlannerPage() {
                 </h3>
                 <button
                   onClick={() => { setExpForm(EMPTY_EXP); setExpModal("add"); }}
-                  className="bg-blue-500 hover:bg-blue-400 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
                   <Plus size={12} /> Gider Ekle
                 </button>
               </div>

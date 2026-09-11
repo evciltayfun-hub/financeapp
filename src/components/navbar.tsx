@@ -23,46 +23,55 @@ export default function Navbar() {
   if (pathname === "/login") return null;
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <span className="font-bold text-lg tracking-tight">🌀 LifeOfTufao</span>
-          <div className="flex items-center gap-1">
-            {navItems.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors",
-                  pathname === href
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                )}
-              >
-                <Icon size={15} />
-                {label}
-              </Link>
-            ))}
+    <nav className="sticky top-0 z-50 border-b border-border bg-[rgba(13,17,23,0.92)] backdrop-blur">
+      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-6 min-w-0">
+          <Link href="/portfolio" className="flex items-center gap-2.5 shrink-0">
+            <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-teal-dim text-base">🌀</span>
+            <span className="leading-tight">
+              <span className="block text-[13px] font-extrabold tracking-[0.08em] text-foreground">LIFEOFTUFAO</span>
+              <span className="block text-[10px] font-medium text-teal">Kişisel Finans & Yaşam</span>
+            </span>
+          </Link>
+          <div className="flex items-center gap-0.5 overflow-x-auto">
+            {navItems.map(({ href, label, icon: Icon }) => {
+              const active = pathname === href || pathname.startsWith(href + "/");
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    "flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors",
+                    active
+                      ? "bg-teal-dim text-teal"
+                      : "text-muted-foreground hover:bg-teal-dim hover:text-teal"
+                  )}
+                >
+                  <Icon size={14} />
+                  {label}
+                </Link>
+              );
+            })}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={toggle}
             title={hidden ? "Rakamları göster" : "Rakamları gizle"}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors",
+              "flex h-8 w-8 items-center justify-center rounded-full border transition-colors",
               hidden
-                ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                ? "border-teal/40 bg-teal-dim text-teal"
+                : "border-border bg-secondary text-muted-foreground hover:text-teal"
             )}
           >
-            {hidden ? <EyeOff size={15} /> : <Eye size={15} />}
+            {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
           <Link
             href="/portfolio/add"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            <PlusCircle size={15} />
+            <PlusCircle size={14} />
             Varlık Ekle
           </Link>
         </div>

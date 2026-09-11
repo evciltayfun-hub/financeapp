@@ -262,10 +262,10 @@ export default function BudgetPage() {
       </div>
 
       {/* Main table */}
-      <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] overflow-hidden">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/8">
+            <tr className="border-b border-border">
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Ay</th>
               <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Devir
@@ -424,7 +424,7 @@ export default function BudgetPage() {
 
       {/* Legend: yearly subs — bottom */}
       {yearlySubs.length > 0 && (
-        <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4">
+        <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
             Yıllık abonelikler — ödeme ayı ataması
           </p>

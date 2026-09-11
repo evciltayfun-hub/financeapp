@@ -36,9 +36,9 @@ interface MarketItem { label: string; symbol: string; unit: string; price: numbe
 interface NewsItem   { title: string; publisher: string; link: string; time: number; thumbnail: string | null }
 
 const typeConfig: Record<AssetType, { chartColor: string; upColor: string; gradFrom: string; hue: number }> = {
-  BIST:   { chartColor: "#4ade80", upColor: "#4ade80", gradFrom: "oklch(0.30 0.06 145)", hue: 145 },
-  US:     { chartColor: "#60a5fa", upColor: "#60a5fa", gradFrom: "oklch(0.30 0.06 255)", hue: 255 },
-  CRYPTO: { chartColor: "#fb923c", upColor: "#fb923c", gradFrom: "oklch(0.30 0.07 52)",  hue: 52  },
+  BIST:   { chartColor: "#4ade80", upColor: "#4ade80", gradFrom: "oklch(0.25 0.04 145)", hue: 145 },
+  US:     { chartColor: "#60a5fa", upColor: "#60a5fa", gradFrom: "oklch(0.25 0.04 255)", hue: 255 },
+  CRYPTO: { chartColor: "#fb923c", upColor: "#fb923c", gradFrom: "oklch(0.26 0.05 52)",  hue: 52  },
 };
 
 const typeBg: Record<AssetType, string> = {
@@ -89,7 +89,7 @@ function CandleTooltip({ active, payload, period }: any) {
   const isUp = d.close >= d.open;
   const dateLabel = period === "1G" ? d.date.slice(11, 16) : d.date.slice(0, 10);
   return (
-    <div className="rounded-lg border border-white/10 bg-[oklch(0.18_0_0)] px-3.5 py-2.5 text-xs shadow-xl">
+    <div className="rounded-lg border border-white/10 bg-card px-3.5 py-2.5 text-xs shadow-xl">
       <div className="text-white/40 mb-2 font-medium">{dateLabel}</div>
       <div className="space-y-1 min-w-[120px]">
         <div className="flex justify-between gap-6">
@@ -104,7 +104,7 @@ function CandleTooltip({ active, payload, period }: any) {
           <span className="text-red-400/70">Düşük</span>
           <span className="text-red-400 tabular-nums">{fmtVal(d.low)}</span>
         </div>
-        <div className="flex justify-between gap-6 pt-1 border-t border-white/8">
+        <div className="flex justify-between gap-6 pt-1 border-t border-border">
           <span className="text-white/40">Kapanış</span>
           <span className={cn("tabular-nums font-semibold", isUp ? "text-green-400" : "text-red-400")}>
             {fmtVal(d.close)}
@@ -155,7 +155,7 @@ function MarketBar({ items, onSelect, selected }: { items: MarketItem[]; onSelec
               "rounded-xl border px-3 py-2.5 flex flex-col gap-0.5 text-left transition-all",
               isActive
                 ? "border-white/20 bg-white/8 ring-1 ring-white/10"
-                : "border-white/8 bg-[oklch(0.26_0_0)] hover:bg-white/5 hover:border-white/12"
+                : "border-border bg-card hover:bg-white/5 hover:border-white/12"
             )}
           >
             <div className="flex items-center justify-between gap-1">
@@ -179,7 +179,7 @@ function MarketBar({ items, onSelect, selected }: { items: MarketItem[]; onSelec
 
 function NewsSection({ news, loading }: { news: NewsItem[]; loading: boolean }) {
   return (
-    <div className="mt-5 pt-4 border-t border-white/8">
+    <div className="mt-5 pt-4 border-t border-border">
       <div className="flex items-center gap-2 mb-3">
         <Newspaper size={13} className="text-white/30" />
         <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">Piyasa Haberleri</span>
@@ -469,7 +469,7 @@ export default function WatchlistPage() {
 
       {/* Market Chart Panel — right below market bar */}
       {selectedMarket && (
-        <div className="mt-4 mb-4 rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-5">
+        <div className="mt-4 mb-4 rounded-xl border border-border bg-card p-5">
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -526,7 +526,7 @@ export default function WatchlistPage() {
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-white/8">
+                <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
                   <div><div className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Dönem Yüksek</div><div className="text-sm font-semibold text-green-400 tabular-nums">{fmtMarketPrice(mHigh)}</div></div>
                   <div><div className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Dönem Düşük</div><div className="text-sm font-semibold text-red-400 tabular-nums">{fmtMarketPrice(mLow)}</div></div>
                   <div><div className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Tarih Aralığı</div><div className="text-xs text-white/45 tabular-nums">{mVisible.length >= 2 ? `${mVisible[0].date.slice(0,10)} — ${mVisible[mVisible.length-1].date.slice(0,10)}` : ""}</div></div>
@@ -559,8 +559,8 @@ export default function WatchlistPage() {
       ) : (
         <div className="flex gap-4 items-start">
           {/* LEFT — Asset list */}
-          <div className="w-72 shrink-0 rounded-xl border border-white/8 overflow-hidden bg-[oklch(0.28_0_0)]">
-            <div className="px-3 py-2.5 border-b border-white/8">
+          <div className="w-72 shrink-0 rounded-xl border border-border overflow-hidden bg-card">
+            <div className="px-3 py-2.5 border-b border-border">
               <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/6">
                 <Search size={11} className="text-white/30 shrink-0" />
                 <input
@@ -624,8 +624,8 @@ export default function WatchlistPage() {
           {selected && selCfg && (
             <div className="flex-1 min-w-0">
               <div
-                className="rounded-xl border border-white/8 overflow-hidden"
-                style={{ background: `linear-gradient(150deg, ${selCfg.gradFrom} 0%, oklch(0.25 0.015 ${selCfg.hue}) 60%, oklch(0.24 0 0) 100%)` }}
+                className="rounded-xl border border-border overflow-hidden"
+                style={{ background: `linear-gradient(150deg, ${selCfg.gradFrom} 0%, oklch(0.20 0.012 ${selCfg.hue}) 55%, var(--card) 100%)` }}
               >
                 <div className="p-6">
                   {/* Symbol header */}
@@ -756,7 +756,7 @@ export default function WatchlistPage() {
                       </div>
 
                       {/* Stats */}
-                      <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-white/8">
+                      <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
                         <div>
                           <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Dönem Yüksek</div>
                           <div className="text-sm font-semibold text-green-400 tabular-nums">

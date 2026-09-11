@@ -296,9 +296,9 @@ export default function PortfolioPage() {
   ];
 
   const typeRowStyle: Record<string, React.CSSProperties> = {
-    BIST:   { backgroundColor: "oklch(0.32 0.06 145)" },
-    US:     { backgroundColor: "oklch(0.32 0.06 255)" },
-    CRYPTO: { backgroundColor: "oklch(0.32 0.07 52)"  },
+    BIST:   { backgroundColor: "oklch(0.21 0.02 145)" },
+    US:     { backgroundColor: "oklch(0.21 0.02 255)" },
+    CRYPTO: { backgroundColor: "oklch(0.21 0.025 52)" },
   };
   const typeBadgeStyle: Record<string, React.CSSProperties> = {
     BIST:   { borderColor: "oklch(0.55 0.18 145)", color: "oklch(0.72 0.18 145)" },
@@ -579,16 +579,16 @@ export default function PortfolioPage() {
         }, 0);
         const cardStyle: Record<string, React.CSSProperties> = {
           BIST: {
-            background: "linear-gradient(135deg, oklch(0.45 0.18 145) 0%, oklch(0.32 0.10 145) 100%)",
-            borderColor: "oklch(0.55 0.20 145)",
+            background: "linear-gradient(135deg, oklch(0.27 0.05 145) 0%, var(--card) 75%)",
+            boxShadow: "0 0 0 1px oklch(0.40 0.08 145)",
           },
           US: {
-            background: "linear-gradient(135deg, oklch(0.42 0.18 255) 0%, oklch(0.30 0.10 255) 100%)",
-            borderColor: "oklch(0.55 0.20 255)",
+            background: "linear-gradient(135deg, oklch(0.27 0.05 255) 0%, var(--card) 75%)",
+            boxShadow: "0 0 0 1px oklch(0.40 0.08 255)",
           },
           CRYPTO: {
-            background: "linear-gradient(135deg, oklch(0.48 0.20 52) 0%, oklch(0.33 0.11 52) 100%)",
-            borderColor: "oklch(0.60 0.22 52)",
+            background: "linear-gradient(135deg, oklch(0.28 0.06 52) 0%, var(--card) 75%)",
+            boxShadow: "0 0 0 1px oklch(0.42 0.09 52)",
           },
         };
         const grandTotalUSD = assetsWithPrice.reduce((s, a) => s + a.totalValueUSD, 0) + cashTotalUSD;
@@ -622,7 +622,7 @@ export default function PortfolioPage() {
             })}
 
             {/* Nakit Kartı */}
-            <Card className="p-4" style={{ background: "linear-gradient(135deg, oklch(0.38 0.10 220) 0%, oklch(0.27 0.05 220) 100%)", borderColor: "oklch(0.55 0.16 220)" }}>
+            <Card className="p-4" style={{ background: "linear-gradient(135deg, oklch(0.27 0.045 175) 0%, var(--card) 75%)", boxShadow: "0 0 0 1px oklch(0.40 0.07 175)" }}>
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wider text-white/50 flex items-center gap-1">
                   <Wallet size={11} /> Nakit

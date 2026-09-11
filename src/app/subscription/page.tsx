@@ -258,7 +258,7 @@ export default function SubscriptionPage() {
         {/* SOL: özet + kategori dağılımı */}
         <div className="w-72 shrink-0 space-y-4">
           {/* Özet kartlar */}
-          <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4 space-y-4">
+          <div className="rounded-xl border border-border bg-card p-4 space-y-4">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Aylık ödemeler</p>
               <p className="text-2xl font-bold">{H(fmtTRY(monthlyOnlyTotal))}</p>
@@ -276,7 +276,7 @@ export default function SubscriptionPage() {
           </div>
 
           {/* Kategori dağılımı — aylık + yıllık */}
-          <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4 space-y-4">
+          <div className="rounded-xl border border-border bg-card p-4 space-y-4">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ödeme Dağılımı</p>
 
             {/* Aylık ödemeler */}
@@ -354,7 +354,7 @@ export default function SubscriptionPage() {
             </div>
           </div>
           {/* Kahve Hesabı */}
-          <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4 space-y-3">
+          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
             {/* Başlık + navigasyon */}
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">☕ Kahve Hesabı</p>
@@ -544,7 +544,7 @@ export default function SubscriptionPage() {
           {/* Liste */}
           <div className="space-y-2">
             {filtered.length === 0 && (
-              <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] py-12 text-center text-sm text-muted-foreground">
+              <div className="rounded-xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">
                 Abonelik bulunamadı
               </div>
             )}
@@ -557,7 +557,7 @@ export default function SubscriptionPage() {
                 <div
                   key={s.id}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] transition-opacity group",
+                    "flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card transition-opacity group",
                     !s.isActive && "opacity-40"
                   )}
                 >
@@ -626,7 +626,7 @@ export default function SubscriptionPage() {
           onClick={() => setModalOpen(false)}
         >
           <div
-            className="bg-[oklch(0.26_0_0)] border border-white/10 rounded-2xl p-6 w-96 space-y-4 shadow-2xl"
+            className="bg-card border border-white/10 rounded-2xl p-6 w-96 space-y-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-semibold">{form.id ? "Aboneliği düzenle" : "Yeni abonelik"}</h3>
@@ -641,7 +641,7 @@ export default function SubscriptionPage() {
               />
 
               <select
-                className="w-full border border-white/10 rounded-xl px-4 py-2.5 text-sm bg-[oklch(0.26_0_0)]"
+                className="w-full border border-white/10 rounded-xl px-4 py-2.5 text-sm bg-background"
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
               >
@@ -657,7 +657,7 @@ export default function SubscriptionPage() {
                   onChange={(e) => setForm({ ...form, price: e.target.value })}
                 />
                 <select
-                  className="border border-white/10 rounded-xl px-3 py-2.5 text-sm bg-[oklch(0.26_0_0)]"
+                  className="border border-white/10 rounded-xl px-3 py-2.5 text-sm bg-background"
                   value={form.currency}
                   onChange={(e) => setForm({ ...form, currency: e.target.value })}
                 >
@@ -684,7 +684,7 @@ export default function SubscriptionPage() {
 
               {form.period === "yearly" && (
                 <select
-                  className="w-full border border-white/10 rounded-xl px-4 py-2.5 text-sm bg-[oklch(0.26_0_0)]"
+                  className="w-full border border-white/10 rounded-xl px-4 py-2.5 text-sm bg-background"
                   value={form.paymentMonth}
                   onChange={(e) => setForm({ ...form, paymentMonth: e.target.value })}
                 >

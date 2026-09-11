@@ -71,7 +71,7 @@ function AttendModal({ event, onSave, onClose }: AttendModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-[oklch(0.22_0_0)] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-card border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-white">Gittim! ✓</h3>
           <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors"><X size={16} /></button>
@@ -133,7 +133,7 @@ function EventFormModal({ initial, onSave, onClose, mode }: EventFormModalProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-[oklch(0.22_0_0)] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-card border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-semibold text-white">{mode === "edit" ? "Etkinliği Düzenle" : "Yeni Etkinlik"}</h3>
           <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors"><X size={16} /></button>
@@ -213,8 +213,8 @@ function EventCard({ event, onAttend, onDelete, onUndo, onEdit }: {
 
   return (
     <div className={cn(
-      "group relative rounded-xl border bg-[oklch(0.26_0_0)] p-4 flex flex-col gap-3 transition-all hover:border-white/15",
-      event.isAttended ? "border-white/8 opacity-90" : "border-white/8"
+      "group relative rounded-xl border bg-card p-4 flex flex-col gap-3 transition-all hover:border-white/15",
+      event.isAttended ? "border-border opacity-90" : "border-border"
     )}>
       {/* Attended badge */}
       {event.isAttended && (
@@ -303,7 +303,7 @@ function EventCard({ event, onAttend, onDelete, onUndo, onEdit }: {
           onClick={() => onAttend(event)}
           className={cn(
             "mt-auto w-full py-2 rounded-lg text-sm font-medium transition-all border",
-            "bg-white/5 hover:bg-green-500/15 text-white/50 hover:text-green-400 border-white/8 hover:border-green-500/30"
+            "bg-white/5 hover:bg-green-500/15 text-white/50 hover:text-green-400 border-border hover:border-green-500/30"
           )}
         >
           ✓ Gittim
@@ -407,7 +407,7 @@ export default function CulturePage() {
       <div className="flex gap-5">
         {/* LEFT sidebar */}
         <div className="w-52 shrink-0 space-y-4">
-          <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-3 space-y-1">
+          <div className="rounded-xl border border-border bg-card p-3 space-y-1">
             {([["tumu", "Tümü"], ["sinema", "Sinema"], ["tiyatro", "Tiyatro"], ["konser", "Konser"]] as const).map(([val, label]) => {
               const cfg = val !== "tumu" ? CAT_CONFIG[val as Category] : null;
               return (
@@ -429,7 +429,7 @@ export default function CulturePage() {
             })}
           </div>
 
-          <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-3 space-y-1">
+          <div className="rounded-xl border border-border bg-card p-3 space-y-1">
             {([["tumu", "Tümü"], ["planlanan", "Planlanan"], ["gidilen", "Gidilen"]] as const).map(([val, label]) => (
               <button
                 key={val}
@@ -445,7 +445,7 @@ export default function CulturePage() {
             ))}
           </div>
 
-          <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4 space-y-3">
+          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
             <p className="text-[10px] text-white/30 uppercase tracking-wider font-medium">İstatistik</p>
             <div className="space-y-2">
               <div className="flex justify-between text-xs">

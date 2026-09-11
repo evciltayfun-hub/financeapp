@@ -190,7 +190,7 @@ function DetailModal({ country, onSave, onDelete, onAddVisit, onDeleteVisit, onC
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-[oklch(0.20_0.04_240)] border border-white/15 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-card border border-white/15 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
@@ -217,7 +217,7 @@ function DetailModal({ country, onSave, onDelete, onAddVisit, onDeleteVisit, onC
         </div>
 
         {/* Home toggle */}
-        <div className="flex items-center gap-2 mb-5 p-3 rounded-xl bg-white/5 border border-white/8">
+        <div className="flex items-center gap-2 mb-5 p-3 rounded-xl bg-white/5 border border-border">
           <span className="text-base">🏠</span>
           <span className="text-sm text-white/60 flex-1">Yaşadığım ülke (Ev)</span>
           <button
@@ -251,7 +251,7 @@ function DetailModal({ country, onSave, onDelete, onAddVisit, onDeleteVisit, onC
             {/* Existing visits */}
             <div className="space-y-2">
               {visits.map((v) => (
-                <div key={v.id} className="bg-white/5 border border-white/8 rounded-xl p-3">
+                <div key={v.id} className="bg-white/5 border border-border rounded-xl p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-white/80">{fmtRange(v)}</div>
@@ -460,36 +460,36 @@ export default function TravelPage() {
 
   function getFill(geoName: string) {
     const c = byName[geoName];
-    if (!c) return "#1e3a5f";
-    if (c.isHome) return "#7c3aed";
-    if (c.status === "visited") return "#16a34a";
-    return "#d97706";
+    if (!c) return "#21262d";
+    if (c.isHome) return "#a78bfa";
+    if (c.status === "visited") return "#00c9a7";
+    return "#e3b341";
   }
   function getHover(geoName: string) {
     const c = byName[geoName];
-    if (!c) return "#2d5a8f";
-    if (c.isHome) return "#9d5bf5";
-    if (c.status === "visited") return "#22c55e";
-    return "#f59e0b";
+    if (!c) return "#30363d";
+    if (c.isHome) return "#c4b5fd";
+    if (c.status === "visited") return "#2ee6c4";
+    return "#f0c75e";
   }
 
   const totalVisits = countries.reduce((s, c) => s + c.visits.length, 0);
 
   return (
-    <div className="h-[calc(100vh-56px)] flex" style={{ background: "linear-gradient(135deg, oklch(0.15 0.05 240) 0%, oklch(0.18 0.06 210) 50%, oklch(0.16 0.04 260) 100%)" }}>
+    <div className="h-[calc(100vh-56px)] flex bg-background">
 
       {/* LEFT sidebar */}
-      <div className="w-68 shrink-0 flex flex-col border-r border-white/8 bg-black/20 backdrop-blur-sm overflow-hidden" style={{ width: 272 }}>
-        <div className="px-4 py-4 border-b border-white/8">
+      <div className="w-68 shrink-0 flex flex-col border-r border-border bg-card/60 overflow-hidden" style={{ width: 272 }}>
+        <div className="px-4 py-4 border-b border-border">
           <h1 className="text-lg font-bold text-white">✈️ Seyahat</h1>
           <p className="text-xs text-white/40 mt-0.5">Haritaya tıkla, dünyayı keşfet</p>
         </div>
 
         {/* Legend */}
         <div className="px-4 py-2.5 border-b border-white/6 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-white/50">
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#7c3aed" }} />Ev</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#16a34a" }} />Gidilen</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#d97706" }} />Planlanan</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#a78bfa" }} />Ev</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#00c9a7" }} />Gidilen</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#e3b341" }} />Planlanan</span>
         </div>
 
         {/* Stats */}
@@ -515,7 +515,7 @@ export default function TravelPage() {
               <span className="text-[11px] font-bold text-white/70">%{worldPct} <span className="text-white/30 font-normal">({totalVisitedCount}/{WORLD_COUNTRIES})</span></span>
             </div>
             <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full transition-all" style={{ width: `${Math.max(worldPct, 0.5)}%` }} />
+              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.max(worldPct, 0.5)}%` }} />
             </div>
           </div>
 
@@ -645,7 +645,7 @@ export default function TravelPage() {
                 const name = geo.properties.name;
                 const fill = getFill(name);
                 return (
-                  <Geography key={geo.rsmKey} geography={geo} fill={fill} stroke="#0a1929" strokeWidth={0.4}
+                  <Geography key={geo.rsmKey} geography={geo} fill={fill} stroke="#0d1117" strokeWidth={0.4}
                     onClick={() => handleCountryClick(name)}
                     onMouseEnter={(e: React.MouseEvent) => setTooltip({ name, x: e.clientX, y: e.clientY })}
                     onMouseMove={(e: React.MouseEvent) => setTooltip({ name, x: e.clientX, y: e.clientY })}

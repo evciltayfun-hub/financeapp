@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Navbar from "@/components/navbar";
 import { PrivacyProvider } from "@/lib/privacy-context";
 
-const geist = Geist({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter" });
+const mono = JetBrains_Mono({ subsets: ["latin", "latin-ext"], variable: "--font-jetbrains" });
 
 export const metadata: Metadata = {
   title: "FinanceApp — Portföy Takibi",
@@ -14,8 +15,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="tr" className="dark" suppressHydrationWarning>
-      <body className={`${geist.className} bg-background text-foreground antialiased`}>
+    <html lang="tr" className={`dark ${inter.variable} ${mono.variable}`} suppressHydrationWarning>
+      <body className="font-sans bg-background text-foreground antialiased">
         <PrivacyProvider>
           <Navbar />
           <main className="min-h-screen">{children}</main>

@@ -30,7 +30,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[oklch(0.13_0_0)] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <form onSubmit={submit} className="w-full max-w-sm bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
         <div className="flex items-center gap-2 text-white">
           <Lock size={18} className="text-white/60" />
@@ -42,13 +42,13 @@ export default function LoginPage() {
           placeholder="Şifre"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition-colors"
+          className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-primary transition-colors"
         />
         {error && <p className="text-xs text-red-400">{error}</p>}
         <button
           type="submit"
           disabled={!password || loading}
-          className="w-full px-4 py-2 text-sm bg-blue-500 hover:bg-blue-400 disabled:opacity-40 text-white rounded-lg transition-colors"
+          className="w-full px-4 py-2 text-sm bg-primary hover:bg-primary/90 disabled:opacity-40 text-primary-foreground font-semibold rounded-lg transition-colors"
         >
           {loading ? "..." : "Giriş"}
         </button>
