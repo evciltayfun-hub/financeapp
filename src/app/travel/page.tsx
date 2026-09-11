@@ -460,17 +460,17 @@ export default function TravelPage() {
 
   function getFill(geoName: string) {
     const c = byName[geoName];
-    if (!c) return "#21262d";
-    if (c.isHome) return "#a78bfa";
-    if (c.status === "visited") return "#00c9a7";
-    return "#e3b341";
+    if (!c) return "var(--map-land)";
+    if (c.isHome) return "var(--map-home)";
+    if (c.status === "visited") return "var(--map-visited)";
+    return "var(--map-planned)";
   }
   function getHover(geoName: string) {
     const c = byName[geoName];
-    if (!c) return "#30363d";
-    if (c.isHome) return "#c4b5fd";
-    if (c.status === "visited") return "#2ee6c4";
-    return "#f0c75e";
+    if (!c) return "var(--map-land-hover)";
+    if (c.isHome) return "var(--map-home-hover)";
+    if (c.status === "visited") return "var(--map-visited-hover)";
+    return "var(--map-planned-hover)";
   }
 
   const totalVisits = countries.reduce((s, c) => s + c.visits.length, 0);
@@ -487,9 +487,9 @@ export default function TravelPage() {
 
         {/* Legend */}
         <div className="px-4 py-2.5 border-b border-white/6 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-white/50">
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#a78bfa" }} />Ev</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#00c9a7" }} />Gidilen</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#e3b341" }} />Planlanan</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--map-home)" }} />Ev</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--map-visited)" }} />Gidilen</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--map-planned)" }} />Planlanan</span>
         </div>
 
         {/* Stats */}
@@ -645,15 +645,15 @@ export default function TravelPage() {
                 const name = geo.properties.name;
                 const fill = getFill(name);
                 return (
-                  <Geography key={geo.rsmKey} geography={geo} fill={fill} stroke="#0d1117" strokeWidth={0.4}
+                  <Geography key={geo.rsmKey} geography={geo} fill={fill} strokeWidth={0.4}
                     onClick={() => handleCountryClick(name)}
                     onMouseEnter={(e: React.MouseEvent) => setTooltip({ name, x: e.clientX, y: e.clientY })}
                     onMouseMove={(e: React.MouseEvent) => setTooltip({ name, x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setTooltip(null)}
                     style={{
-                      default: { fill, outline: "none", cursor: "pointer" },
-                      hover:   { fill: getHover(name), outline: "none", cursor: "pointer" },
-                      pressed: { fill: getHover(name), outline: "none" },
+                      default: { fill, stroke: "var(--background)", outline: "none", cursor: "pointer" },
+                      hover:   { fill: getHover(name), stroke: "var(--background)", outline: "none", cursor: "pointer" },
+                      pressed: { fill: getHover(name), stroke: "var(--background)", outline: "none" },
                     }}
                   />
                 );

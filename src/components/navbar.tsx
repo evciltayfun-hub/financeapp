@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { TrendingUp, PlusCircle, Eye, EyeOff, LineChart, CreditCard, BarChart2, Clapperboard, Globe, Compass } from "lucide-react";
+import { TrendingUp, PlusCircle, Eye, EyeOff, LineChart, CreditCard, BarChart2, Clapperboard, Globe, Compass, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 import { usePrivacy } from "@/lib/privacy-context";
 
 const navItems = [
@@ -19,11 +20,12 @@ const navItems = [
 export default function Navbar() {
   const pathname = usePathname();
   const { hidden, toggle } = usePrivacy();
+  const { resolvedTheme, setTheme } = useTheme();
 
   if (pathname === "/login") return null;
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-[rgba(13,17,23,0.92)] backdrop-blur">
+    <nav className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
         <div className="flex items-center gap-6 min-w-0">
           <Link href="/portfolio" className="flex items-center gap-2.5 shrink-0">
@@ -55,6 +57,14 @@ export default function Navbar() {
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            title="Açık / koyu tema"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-secondary text-muted-foreground transition-colors hover:text-teal"
+          >
+            <Sun size={14} className="hidden dark:block" />
+            <Moon size={14} className="block dark:hidden" />
+          </button>
           <button
             onClick={toggle}
             title={hidden ? "Rakamları göster" : "Rakamları gizle"}

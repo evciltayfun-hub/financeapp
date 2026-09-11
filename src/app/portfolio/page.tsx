@@ -296,9 +296,9 @@ export default function PortfolioPage() {
   ];
 
   const typeRowStyle: Record<string, React.CSSProperties> = {
-    BIST:   { backgroundColor: "oklch(0.21 0.02 145)" },
-    US:     { backgroundColor: "oklch(0.21 0.02 255)" },
-    CRYPTO: { backgroundColor: "oklch(0.21 0.025 52)" },
+    BIST:   { backgroundColor: "color-mix(in oklab, oklch(0.65 0.15 145) 7%, var(--card))" },
+    US:     { backgroundColor: "color-mix(in oklab, oklch(0.62 0.15 255) 7%, var(--card))" },
+    CRYPTO: { backgroundColor: "color-mix(in oklab, oklch(0.70 0.16 52) 8%, var(--card))" },
   };
   const typeBadgeStyle: Record<string, React.CSSProperties> = {
     BIST:   { borderColor: "oklch(0.55 0.18 145)", color: "oklch(0.72 0.18 145)" },
@@ -579,16 +579,16 @@ export default function PortfolioPage() {
         }, 0);
         const cardStyle: Record<string, React.CSSProperties> = {
           BIST: {
-            background: "linear-gradient(135deg, oklch(0.27 0.05 145) 0%, var(--card) 75%)",
-            boxShadow: "0 0 0 1px oklch(0.40 0.08 145)",
+            background: "linear-gradient(135deg, color-mix(in oklab, oklch(0.65 0.15 145) 16%, var(--card)) 0%, var(--card) 75%)",
+            boxShadow: "0 0 0 1px color-mix(in oklab, oklch(0.65 0.15 145) 40%, var(--card))",
           },
           US: {
-            background: "linear-gradient(135deg, oklch(0.27 0.05 255) 0%, var(--card) 75%)",
-            boxShadow: "0 0 0 1px oklch(0.40 0.08 255)",
+            background: "linear-gradient(135deg, color-mix(in oklab, oklch(0.62 0.15 255) 16%, var(--card)) 0%, var(--card) 75%)",
+            boxShadow: "0 0 0 1px color-mix(in oklab, oklch(0.62 0.15 255) 40%, var(--card))",
           },
           CRYPTO: {
-            background: "linear-gradient(135deg, oklch(0.28 0.06 52) 0%, var(--card) 75%)",
-            boxShadow: "0 0 0 1px oklch(0.42 0.09 52)",
+            background: "linear-gradient(135deg, color-mix(in oklab, oklch(0.70 0.16 52) 18%, var(--card)) 0%, var(--card) 75%)",
+            boxShadow: "0 0 0 1px color-mix(in oklab, oklch(0.70 0.16 52) 42%, var(--card))",
           },
         };
         const grandTotalUSD = assetsWithPrice.reduce((s, a) => s + a.totalValueUSD, 0) + cashTotalUSD;
@@ -622,7 +622,7 @@ export default function PortfolioPage() {
             })}
 
             {/* Nakit Kartı */}
-            <Card className="p-4" style={{ background: "linear-gradient(135deg, oklch(0.27 0.045 175) 0%, var(--card) 75%)", boxShadow: "0 0 0 1px oklch(0.40 0.07 175)" }}>
+            <Card className="p-4" style={{ background: "linear-gradient(135deg, color-mix(in oklab, oklch(0.65 0.12 175) 16%, var(--card)) 0%, var(--card) 75%)", boxShadow: "0 0 0 1px color-mix(in oklab, oklch(0.65 0.12 175) 40%, var(--card))" }}>
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wider text-white/50 flex items-center gap-1">
                   <Wallet size={11} /> Nakit

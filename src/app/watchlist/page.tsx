@@ -36,9 +36,9 @@ interface MarketItem { label: string; symbol: string; unit: string; price: numbe
 interface NewsItem   { title: string; publisher: string; link: string; time: number; thumbnail: string | null }
 
 const typeConfig: Record<AssetType, { chartColor: string; upColor: string; gradFrom: string; hue: number }> = {
-  BIST:   { chartColor: "#4ade80", upColor: "#4ade80", gradFrom: "oklch(0.25 0.04 145)", hue: 145 },
-  US:     { chartColor: "#60a5fa", upColor: "#60a5fa", gradFrom: "oklch(0.25 0.04 255)", hue: 255 },
-  CRYPTO: { chartColor: "#fb923c", upColor: "#fb923c", gradFrom: "oklch(0.26 0.05 52)",  hue: 52  },
+  BIST:   { chartColor: "#4ade80", upColor: "#4ade80", gradFrom: "color-mix(in oklab, oklch(0.65 0.15 145) 14%, var(--card))", hue: 145 },
+  US:     { chartColor: "#60a5fa", upColor: "#60a5fa", gradFrom: "color-mix(in oklab, oklch(0.62 0.15 255) 14%, var(--card))", hue: 255 },
+  CRYPTO: { chartColor: "#fb923c", upColor: "#fb923c", gradFrom: "color-mix(in oklab, oklch(0.70 0.16 52) 15%, var(--card))", hue: 52 },
 };
 
 const typeBg: Record<AssetType, string> = {
@@ -517,12 +517,12 @@ export default function WatchlistPage() {
                 <div className="h-[240px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={marketChart} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barCategoryGap="20%">
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: "rgba(255,255,255,0.30)" }} tickLine={false} axisLine={false} interval={Math.floor(marketChart.length / 6)} tickFormatter={xTickFormatter} />
-                      <YAxis domain={[mMin, mMax]} tick={{ fontSize: 10, fill: "rgba(255,255,255,0.30)" }} tickLine={false} axisLine={false} width={72} tickFormatter={(v: number) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v.toFixed(2)} />
-                      <Tooltip content={<CandleTooltip period={marketPeriod} />} cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} interval={Math.floor(marketChart.length / 6)} tickFormatter={xTickFormatter} />
+                      <YAxis domain={[mMin, mMax]} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={72} tickFormatter={(v: number) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v.toFixed(2)} />
+                      <Tooltip content={<CandleTooltip period={marketPeriod} />} cursor={{ stroke: "var(--line-strong)", strokeWidth: 1 }} />
                       <Bar dataKey="close" shape={mShape} maxBarSize={16} isAnimationActive={false} />
-                      <Brush dataKey="date" height={22} stroke="rgba(255,255,255,0.10)" fill="rgba(255,255,255,0.03)" travellerWidth={6} tickFormatter={xTickFormatter} startIndex={marketZoomStart} endIndex={marketZoomEnd} onChange={(range) => { if (range.startIndex !== undefined && range.endIndex !== undefined) { setMarketZoomStart(range.startIndex); setMarketZoomEnd(range.endIndex); } }} />
+                      <Brush dataKey="date" height={22} stroke="var(--line-strong)" fill="transparent" travellerWidth={6} tickFormatter={xTickFormatter} startIndex={marketZoomStart} endIndex={marketZoomEnd} onChange={(range) => { if (range.startIndex !== undefined && range.endIndex !== undefined) { setMarketZoomStart(range.startIndex); setMarketZoomEnd(range.endIndex); } }} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
@@ -625,7 +625,7 @@ export default function WatchlistPage() {
             <div className="flex-1 min-w-0">
               <div
                 className="rounded-xl border border-border overflow-hidden"
-                style={{ background: `linear-gradient(150deg, ${selCfg.gradFrom} 0%, oklch(0.20 0.012 ${selCfg.hue}) 55%, var(--card) 100%)` }}
+                style={{ background: `linear-gradient(150deg, ${selCfg.gradFrom} 0%, color-mix(in oklab, oklch(0.65 0.1 ${selCfg.hue}) 5%, var(--card)) 55%, var(--card) 100%)` }}
               >
                 <div className="p-6">
                   {/* Symbol header */}
@@ -713,10 +713,10 @@ export default function WatchlistPage() {
                       <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <ComposedChart data={selChart} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barCategoryGap="20%">
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                             <XAxis
                               dataKey="date"
-                              tick={{ fontSize: 10, fill: "rgba(255,255,255,0.30)" }}
+                              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
                               tickLine={false}
                               axisLine={false}
                               interval={Math.floor(selChart.length / 6)}
@@ -724,7 +724,7 @@ export default function WatchlistPage() {
                             />
                             <YAxis
                               domain={[chartMin, chartMax ?? "auto"]}
-                              tick={{ fontSize: 10, fill: "rgba(255,255,255,0.30)" }}
+                              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
                               tickLine={false}
                               axisLine={false}
                               width={64}
@@ -732,14 +732,14 @@ export default function WatchlistPage() {
                             />
                             <Tooltip
                               content={<CandleTooltip period={period} />}
-                              cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
+                              cursor={{ stroke: "var(--line-strong)", strokeWidth: 1 }}
                             />
                             <Bar dataKey="close" shape={candleShape} maxBarSize={16} isAnimationActive={false} />
                             <Brush
                               dataKey="date"
                               height={22}
-                              stroke="rgba(255,255,255,0.10)"
-                              fill="rgba(255,255,255,0.03)"
+                              stroke="var(--line-strong)"
+                              fill="transparent"
                               travellerWidth={6}
                               tickFormatter={xTickFormatter}
                               startIndex={zoomStart}
