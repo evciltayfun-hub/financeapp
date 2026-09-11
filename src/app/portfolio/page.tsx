@@ -401,20 +401,20 @@ export default function PortfolioPage() {
                     {asset.type}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm">
+                <TableCell className="text-right tabular-nums text-sm">
                   {asset.currentPrice !== null
                     ? H(asset.type === "BIST" ? `${asset.currentPrice.toFixed(2)} ₺` : `$${asset.currentPrice.toFixed(2)}`)
                     : <span className="text-muted-foreground">—</span>}
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm">
+                <TableCell className="text-right tabular-nums text-sm">
                   {H(formatNumber(asset.totalQuantity, asset.type === "CRYPTO" ? 4 : 0))}
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm text-muted-foreground">
+                <TableCell className="text-right tabular-nums text-sm text-muted-foreground">
                   {H(asset.type === "BIST"
                     ? asset.avgCostTL !== null ? `${asset.avgCostTL.toFixed(2)} ₺` : "—"
                     : asset.avgCostUSD !== null ? `$${asset.avgCostUSD.toFixed(2)}` : "—")}
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm">
+                <TableCell className="text-right tabular-nums text-sm">
                   {asset.type === "BIST" ? (
                     H(formatCurrency(asset.totalCostTL))
                   ) : (
@@ -424,7 +424,7 @@ export default function PortfolioPage() {
                     </div>
                   )}
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm font-medium">
+                <TableCell className="text-right tabular-nums text-sm font-medium">
                   {asset.type === "BIST" ? (
                     asset.totalValueTL > 0 ? H(formatCurrency(asset.totalValueTL)) : <span className="text-muted-foreground">—</span>
                   ) : (
@@ -436,7 +436,7 @@ export default function PortfolioPage() {
                     ) : <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm font-medium">
+                <TableCell className="text-right tabular-nums text-sm font-medium">
                   {(asset.type === "BIST" ? asset.totalValueTL : asset.totalValueUSD) > 0 ? (
                     asset.type === "BIST" ? (
                       <span className={asset.totalProfitTL >= 0 ? "text-green-600" : "text-red-600"}>
@@ -454,7 +454,7 @@ export default function PortfolioPage() {
                     )
                   ) : "—"}
                 </TableCell>
-                <TableCell className={`text-right font-mono text-sm font-bold ${asset.profitPercent >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <TableCell className={`text-right tabular-nums text-sm font-bold ${asset.profitPercent >= 0 ? "text-green-600" : "text-red-600"}`}>
                   {asset.totalValueTL > 0 ? H(formatPercent(asset.profitPercent)) : "—"}
                 </TableCell>
                 <TableCell>
@@ -489,22 +489,22 @@ export default function PortfolioPage() {
                       {new Date(lot.purchaseDate).toLocaleDateString("tr-TR")}
                       {lot.note && <span className="ml-2 italic text-xs">— {lot.note}</span>}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                    <TableCell className="text-right tabular-nums text-xs text-muted-foreground">
                       {lotCostPrice != null ? H(fmt(lotCostPrice)) : "—"}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-xs">
+                    <TableCell className="text-right tabular-nums text-xs">
                       {H(formatNumber(lot.quantity, asset.type === "CRYPTO" ? 4 : 0))}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-xs">
+                    <TableCell className="text-right tabular-nums text-xs">
                       {lotCost != null ? H(fmt(lotCost)) : "—"}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-xs">
+                    <TableCell className="text-right tabular-nums text-xs">
                       {lotValue != null ? H(fmt(lotValue)) : "—"}
                     </TableCell>
-                    <TableCell className={`text-right font-mono text-xs ${lotProfit !== null && lotProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    <TableCell className={`text-right tabular-nums text-xs ${lotProfit !== null && lotProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
                       {lotProfit !== null ? H(fmt(lotProfit)) : "—"}
                     </TableCell>
-                    <TableCell className={`text-right font-mono text-xs font-bold ${lotPct !== null && lotPct >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    <TableCell className={`text-right tabular-nums text-xs font-bold ${lotPct !== null && lotPct >= 0 ? "text-green-600" : "text-red-600"}`}>
                       {lotPct !== null ? H(formatPercent(lotPct)) : "—"}
                     </TableCell>
                     <TableCell>

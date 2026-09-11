@@ -107,34 +107,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Culture events
-    for (const ev of data.cultureEvents ?? []) {
-      const { id, createdAt, updatedAt, ...rest } = ev;
-      await prisma.cultureEvent.upsert({
-        where: { id },
-        create: { id, ...rest },
-        update: rest,
-      });
-    }
-
-    // Trips + expenses
-    for (const trip of data.trips ?? []) {
-      const { id, expenses, createdAt, updatedAt, ...rest } = trip;
-      await prisma.tripPlan.upsert({
-        where: { id },
-        create: { id, ...rest },
-        update: rest,
-      });
-      for (const exp of expenses ?? []) {
-        const { id: eid, tripId, createdAt: _c, updatedAt: _u, ...expData } = exp;
-        await prisma.tripExpense.upsert({
-          where: { id: eid },
-          create: { id: eid, tripId: id, ...expData },
-          update: expData,
-        });
-      }
-    }
-
     return NextResponse.json({
       ok: true,
       imported: {
@@ -146,8 +118,6 @@ export async function POST(req: NextRequest) {
         portfolioNotes: data.portfolioNotes?.length ?? 0,
         monthlyGoals: data.monthlyGoals?.length ?? 0,
         travelCountries: data.travelCountries?.length ?? 0,
-        cultureEvents: data.cultureEvents?.length ?? 0,
-        trips: data.trips?.length ?? 0,
       },
     });
   } catch (e: unknown) {

@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [assets, cashBalances, subscriptions, watchlistItems, monthlyBudgets, portfolioNotes, monthlyGoals, travelCountries, cultureEvents, trips] =
+  const [assets, cashBalances, subscriptions, watchlistItems, monthlyBudgets, portfolioNotes, monthlyGoals, travelCountries] =
     await Promise.all([
       prisma.asset.findMany({ include: { lots: true } }),
       prisma.cashBalance.findMany(),
@@ -18,12 +18,10 @@ export async function GET(req: NextRequest) {
       prisma.portfolioNote.findMany(),
       prisma.monthlyGoal.findMany(),
       prisma.travelCountry.findMany({ include: { visits: true } }),
-      prisma.cultureEvent.findMany(),
-      prisma.tripPlan.findMany({ include: { expenses: true } }),
     ]);
 
   return NextResponse.json({
     exportedAt: new Date().toISOString(),
-    assets, cashBalances, subscriptions, watchlistItems, monthlyBudgets, portfolioNotes, monthlyGoals, travelCountries, cultureEvents, trips,
+    assets, cashBalances, subscriptions, watchlistItems, monthlyBudgets, portfolioNotes, monthlyGoals, travelCountries,
   });
 }

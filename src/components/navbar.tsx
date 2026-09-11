@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { TrendingUp, PlusCircle, Eye, EyeOff, LineChart, CreditCard, BarChart2, Clapperboard, Globe, Compass, Sun, Moon } from "lucide-react";
+import { TrendingUp, PlusCircle, Eye, EyeOff, LineChart, CreditCard, BarChart2, Globe, Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { usePrivacy } from "@/lib/privacy-context";
 
@@ -12,9 +12,7 @@ const navItems = [
   { href: "/watchlist", label: "Takip", icon: LineChart },
   { href: "/subscription", label: "Abonelikler", icon: CreditCard },
   { href: "/budget",  label: "Gelir/Gider",  icon: BarChart2 },
-  { href: "/culture", label: "Kültür/Sanat", icon: Clapperboard },
   { href: "/travel",   label: "Seyahat",      icon: Globe    },
-  { href: "/planner",  label: "Planlayıcı",   icon: Compass  },
 ];
 
 export default function Navbar() {

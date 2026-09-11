@@ -31,7 +31,7 @@ async function main() {
   const file = path.join(BACKUP_DIR, `financeapp-${stamp}.json`);
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
   const lots = (data.assets || []).reduce((n, a) => n + (a.lots?.length || 0), 0);
-  log(`OK ${path.basename(file)} — ${data.assets?.length ?? 0} varlık/${lots} lot, ${data.subscriptions?.length ?? 0} abonelik, ${data.monthlyBudgets?.length ?? 0} bütçe, ${data.travelCountries?.length ?? 0} ülke, ${data.trips?.length ?? 0} gezi`);
+  log(`OK ${path.basename(file)} — ${data.assets?.length ?? 0} varlık/${lots} lot, ${data.subscriptions?.length ?? 0} abonelik, ${data.monthlyBudgets?.length ?? 0} bütçe, ${data.travelCountries?.length ?? 0} ülke`);
 
   const old = fs.readdirSync(BACKUP_DIR)
     .filter((f) => /^financeapp-\d{4}-\d{2}-\d{2}\.json$/.test(f))

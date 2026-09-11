@@ -11,7 +11,7 @@ model Asset {
   id        String   @id @default(cuid())
   symbol    String
   name      String
-  type      String   // BIST | US | CRYPTO
+  type      String // BIST | US | CRYPTO
   lots      Lot[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -20,47 +20,47 @@ model Asset {
 }
 
 model Lot {
-  id           String   @id @default(cuid())
-  assetId      String
-  asset        Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  quantity     Float
-  costPriceTL  Float?
-  costPriceUSD Float?
-  purchaseDate DateTime @default(now())
-  note         String?
-  splitsAppliedThrough DateTime?  // corporate actions (splits) up to this date are reflected in quantity/cost
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                   String    @id @default(cuid())
+  assetId              String
+  asset                Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  quantity             Float
+  costPriceTL          Float?
+  costPriceUSD         Float?
+  purchaseDate         DateTime  @default(now())
+  note                 String?
+  splitsAppliedThrough DateTime? // corporate actions (splits) up to this date are reflected in quantity/cost
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 }
 
 model MonthlyGoal {
-  id                String   @id @default(cuid())
-  year              Int
-  month             Int
+  id               String   @id @default(cuid())
+  year             Int
+  month            Int
   // Planlanan
-  netSalary         Float    @default(0)  // Net Maaş (Hesaba Yatan)
-  spendingTarget    Float    @default(0)  // Harcama (Hedef)
-  besInvestment     Float    @default(0)  // BES Yatırımı (Kişisel)
-  investmentTarget  Float    @default(0)  // Yatırıma Kalan (Nakit) = netSalary - spendingTarget - besInvestment
+  netSalary        Float    @default(0) // Net Maaş (Hesaba Yatan)
+  spendingTarget   Float    @default(0) // Harcama (Hedef)
+  besInvestment    Float    @default(0) // BES Yatırımı (Kişisel)
+  investmentTarget Float    @default(0) // Yatırıma Kalan (Nakit) = netSalary - spendingTarget - besInvestment
   // Gerçekler
-  actualInvestment  Float    @default(0)  // Yapılan Yatırım
-  remainingCash     Float    @default(0)  // Kalan Nakit
-  creditCardTL      Float    @default(0)  // Kredi Kartı Borcu TL
-  creditCardEUR     Float    @default(0)  // Kredi Kartı Borcu EUR
-  netAmount         Float    @default(0)  // NET
-  note              String?              // Notlar
-  isChecked         Boolean  @default(false)
-  extraAmount       Float    @default(0)  // Ekstra
-  isExtraChecked    Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  actualInvestment Float    @default(0) // Yapılan Yatırım
+  remainingCash    Float    @default(0) // Kalan Nakit
+  creditCardTL     Float    @default(0) // Kredi Kartı Borcu TL
+  creditCardEUR    Float    @default(0) // Kredi Kartı Borcu EUR
+  netAmount        Float    @default(0) // NET
+  note             String? // Notlar
+  isChecked        Boolean  @default(false)
+  extraAmount      Float    @default(0) // Ekstra
+  isExtraChecked   Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@unique([year, month])
 }
 
 model CashBalance {
   id        String   @id @default(cuid())
-  currency  String   @unique  // TRY, USD, EUR
+  currency  String   @unique // TRY, USD, EUR
   amount    Float    @default(0)
   label     String   @default("")
   updatedAt DateTime @updatedAt
@@ -76,7 +76,7 @@ model PortfolioNote {
 model WatchlistItem {
   id        String   @id @default(cuid())
   symbol    String
-  type      String   // BIST | US | CRYPTO
+  type      String // BIST | US | CRYPTO
   name      String
   createdAt DateTime @default(now())
 
@@ -89,11 +89,11 @@ model Subscription {
   category        String
   price           Float
   currency        String   @default("₺")
-  period          String   // "monthly" | "yearly"
-  paymentMonth    Int?     // 1-12, only for yearly
+  period          String // "monthly" | "yearly"
+  paymentMonth    Int? // 1-12, only for yearly
   isActive        Boolean  @default(true)
-  activatedFrom   Int?     // yyyymm — month from which active (null = always)
-  deactivatedFrom Int?     // yyyymm — month from which inactive (null = always inactive if !isActive)
+  activatedFrom   Int? // yyyymm — month from which active (null = always)
+  deactivatedFrom Int? // yyyymm — month from which inactive (null = always inactive if !isActive)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -102,7 +102,7 @@ model TravelCountry {
   id          String        @id @default(cuid())
   countryName String        @unique
   isoCode     String?
-  status      String        // "planned" | "visited"
+  status      String // "planned" | "visited"
   isHome      Boolean       @default(false)
   notes       String?
   rating      Int?
@@ -112,74 +112,25 @@ model TravelCountry {
 }
 
 model TravelVisit {
-  id          String        @id @default(cuid())
-  countryId   String
-  country     TravelCountry @relation(fields: [countryId], references: [id], onDelete: Cascade)
-  startDate   String?       // YYYY-MM-DD
-  endDate     String?       // YYYY-MM-DD
-  cities      String?
-  notes       String?
-  createdAt   DateTime      @default(now())
-}
-
-model CultureEvent {
-  id          String   @id @default(cuid())
-  category    String   // "sinema" | "tiyatro" | "konser"
-  title       String
-  subtitle    String?  // yönetmen / sanatçı / oyun yazarı
-  genre       String?
-  venue       String?
-  eventDate   String?  // YYYY-MM-DD
-  notes       String?
-  rating      Int?     // 1-5
-  isAttended  Boolean  @default(false)
-  attendedAt  String?  // YYYY-MM-DD
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model TripPlan {
-  id          String        @id @default(cuid())
-  title       String
-  destination String
-  startDate   String?
-  endDate     String?
-  status      String        @default("planned") // "draft" | "planned" | "completed"
-  totalBudget Float?
-  currency    String        @default("TRY")
-  notes       String?
-  expenses    TripExpense[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-}
-
-model TripExpense {
-  id          String   @id @default(cuid())
-  tripId      String
-  trip        TripPlan @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  category    String
-  description String
-  amount      Float
-  currency    String   @default("TRY")
-  isPaid        Boolean  @default(false)
-  date          String?
-  savingsAmount Float    @default(0)   // estimated value of included services (TRY)
-  savingsNote   String?                // e.g. "Kahvaltı, Gym"
-  savingsData   String?                // JSON: {days, items:[{label,perDay,checked}]}
-  paymentMethod String   @default("nakit")  // "nakit" | "kredi kartı"
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String        @id @default(cuid())
+  countryId String
+  country   TravelCountry @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  startDate String? // YYYY-MM-DD
+  endDate   String? // YYYY-MM-DD
+  cities    String?
+  notes     String?
+  createdAt DateTime      @default(now())
 }
 
 model MonthlyBudget {
   id            String   @id @default(cuid())
   year          Int
-  month         Int      // 1-12
-  carryover     Float    @default(0)  // Önceki aydan devir
+  month         Int // 1-12
+  carryover     Float    @default(0) // Önceki aydan devir
   salary        Float    @default(0)
-  extraIncome   Float    @default(0)  // Ek gelir
+  extraIncome   Float    @default(0) // Ek gelir
   otherExpenses Float    @default(0)
-  investment    Float    @default(0)  // Yatırıma aktarılacak
+  investment    Float    @default(0) // Yatırıma aktarılacak
   note          String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
