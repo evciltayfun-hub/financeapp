@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Exporting local data...");
 
-  const [assets, cashBalances, subscriptions, watchlistItems, monthlyBudgets, portfolioNotes] =
+  const [assets, cashBalances, subscriptions, watchlistItems, monthlyBudgets, portfolioNotes, monthlyGoals, travelCountries, cultureEvents, trips] =
     await Promise.all([
       prisma.asset.findMany({ include: { lots: true } }),
       prisma.cashBalance.findMany(),
@@ -17,9 +17,13 @@ async function main() {
       prisma.watchlistItem.findMany(),
       prisma.monthlyBudget.findMany(),
       prisma.portfolioNote.findMany(),
+      prisma.monthlyGoal.findMany(),
+      prisma.travelCountry.findMany({ include: { visits: true } }),
+      prisma.cultureEvent.findMany(),
+      prisma.tripPlan.findMany({ include: { expenses: true } }),
     ]);
 
-  const data = { assets, cashBalances, subscriptions, watchlistItems, monthlyBudgets, portfolioNotes };
+  const data = { assets, cashBalances, subscriptions, watchlistItems, monthlyBudgets, portfolioNotes, monthlyGoals, travelCountries, cultureEvents, trips };
   const outPath = path.join(__dirname, "..", "export.json");
   fs.writeFileSync(outPath, JSON.stringify(data, null, 2));
 
@@ -29,6 +33,10 @@ async function main() {
   console.log(`✓ Watchlist:      ${watchlistItems.length}`);
   console.log(`✓ Budget rows:    ${monthlyBudgets.length}`);
   console.log(`✓ Notes:          ${portfolioNotes.length}`);
+  console.log(`✓ Monthly goals:  ${monthlyGoals.length}`);
+  console.log(`✓ Travel:         ${travelCountries.length} countries (${travelCountries.reduce((a, x) => a + x.visits.length, 0)} visits)`);
+  console.log(`✓ Culture events: ${cultureEvents.length}`);
+  console.log(`✓ Trips:          ${trips.length} (${trips.reduce((a, x) => a + x.expenses.length, 0)} expenses)`);
   console.log(`\nSaved → export.json`);
 }
 

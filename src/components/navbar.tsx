@@ -3,25 +3,30 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { TrendingUp, PlusCircle, Eye, EyeOff, LineChart, CreditCard, BarChart2 } from "lucide-react";
+import { TrendingUp, PlusCircle, Eye, EyeOff, LineChart, CreditCard, BarChart2, Clapperboard, Globe, Compass } from "lucide-react";
 import { usePrivacy } from "@/lib/privacy-context";
 
 const navItems = [
   { href: "/portfolio", label: "Portföy", icon: TrendingUp },
   { href: "/watchlist", label: "Takip", icon: LineChart },
   { href: "/subscription", label: "Abonelikler", icon: CreditCard },
-  { href: "/budget", label: "Gelir/Gider", icon: BarChart2 },
+  { href: "/budget",  label: "Gelir/Gider",  icon: BarChart2 },
+  { href: "/culture", label: "Kültür/Sanat", icon: Clapperboard },
+  { href: "/travel",   label: "Seyahat",      icon: Globe    },
+  { href: "/planner",  label: "Planlayıcı",   icon: Compass  },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const { hidden, toggle } = usePrivacy();
 
+  if (pathname === "/login") return null;
+
   return (
     <nav className="border-b bg-background/95 backdrop-blur sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <span className="font-bold text-lg tracking-tight">💹 FinanceApp</span>
+          <span className="font-bold text-lg tracking-tight">🌀 LifeOfTufao</span>
           <div className="flex items-center gap-1">
             {navItems.map(({ href, label, icon: Icon }) => (
               <Link

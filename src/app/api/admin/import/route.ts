@@ -79,6 +79,62 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Monthly goals
+    for (const row of data.monthlyGoals ?? []) {
+      const { id, createdAt, updatedAt, ...rest } = row;
+      await prisma.monthlyGoal.upsert({
+        where: { year_month: { year: rest.year, month: rest.month } },
+        create: { id, ...rest },
+        update: rest,
+      });
+    }
+
+    // Travel countries + visits
+    for (const country of data.travelCountries ?? []) {
+      const { id, visits, createdAt, updatedAt, ...rest } = country;
+      const created = await prisma.travelCountry.upsert({
+        where: { countryName: rest.countryName },
+        create: { id, ...rest },
+        update: rest,
+      });
+      for (const visit of visits ?? []) {
+        const { id: vid, countryId, createdAt: _c, ...visitData } = visit;
+        await prisma.travelVisit.upsert({
+          where: { id: vid },
+          create: { id: vid, countryId: created.id, ...visitData },
+          update: visitData,
+        });
+      }
+    }
+
+    // Culture events
+    for (const ev of data.cultureEvents ?? []) {
+      const { id, createdAt, updatedAt, ...rest } = ev;
+      await prisma.cultureEvent.upsert({
+        where: { id },
+        create: { id, ...rest },
+        update: rest,
+      });
+    }
+
+    // Trips + expenses
+    for (const trip of data.trips ?? []) {
+      const { id, expenses, createdAt, updatedAt, ...rest } = trip;
+      await prisma.tripPlan.upsert({
+        where: { id },
+        create: { id, ...rest },
+        update: rest,
+      });
+      for (const exp of expenses ?? []) {
+        const { id: eid, tripId, createdAt: _c, updatedAt: _u, ...expData } = exp;
+        await prisma.tripExpense.upsert({
+          where: { id: eid },
+          create: { id: eid, tripId: id, ...expData },
+          update: expData,
+        });
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       imported: {
@@ -88,6 +144,10 @@ export async function POST(req: NextRequest) {
         watchlistItems: data.watchlistItems?.length ?? 0,
         monthlyBudgets: data.monthlyBudgets?.length ?? 0,
         portfolioNotes: data.portfolioNotes?.length ?? 0,
+        monthlyGoals: data.monthlyGoals?.length ?? 0,
+        travelCountries: data.travelCountries?.length ?? 0,
+        cultureEvents: data.cultureEvents?.length ?? 0,
+        trips: data.trips?.length ?? 0,
       },
     });
   } catch (e: unknown) {

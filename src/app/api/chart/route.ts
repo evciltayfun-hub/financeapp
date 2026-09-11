@@ -5,6 +5,7 @@ export interface ChartPoint { date: string; open: number; high: number; low: num
 function getPeriodParams(period: string): { interval: string; range: string } {
   switch (period) {
     case "1G": return { interval: "60m", range: "1d"  };
+    case "5G": return { interval: "1d",  range: "5d"  };
     case "1A": return { interval: "1d",  range: "1mo" };
     case "3A": return { interval: "1d",  range: "3mo" };
     case "6A": return { interval: "1wk", range: "6mo" };
@@ -48,6 +49,7 @@ async function fetchYahooChart(yahooSymbol: string, interval: string, range: str
 }
 
 function toYahooSymbol(symbol: string, type: string): string {
+  if (type === "MARKET") return symbol; // already a Yahoo Finance symbol
   if (type === "BIST") return `${symbol}.IS`;
   if (type === "CRYPTO") {
     const s = symbol.toUpperCase();

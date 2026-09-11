@@ -97,6 +97,79 @@ model Subscription {
   updatedAt       DateTime @updatedAt
 }
 
+model TravelCountry {
+  id          String        @id @default(cuid())
+  countryName String        @unique
+  isoCode     String?
+  status      String        // "planned" | "visited"
+  isHome      Boolean       @default(false)
+  notes       String?
+  rating      Int?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  visits      TravelVisit[]
+}
+
+model TravelVisit {
+  id          String        @id @default(cuid())
+  countryId   String
+  country     TravelCountry @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  startDate   String?       // YYYY-MM-DD
+  endDate     String?       // YYYY-MM-DD
+  cities      String?
+  notes       String?
+  createdAt   DateTime      @default(now())
+}
+
+model CultureEvent {
+  id          String   @id @default(cuid())
+  category    String   // "sinema" | "tiyatro" | "konser"
+  title       String
+  subtitle    String?  // yönetmen / sanatçı / oyun yazarı
+  genre       String?
+  venue       String?
+  eventDate   String?  // YYYY-MM-DD
+  notes       String?
+  rating      Int?     // 1-5
+  isAttended  Boolean  @default(false)
+  attendedAt  String?  // YYYY-MM-DD
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TripPlan {
+  id          String        @id @default(cuid())
+  title       String
+  destination String
+  startDate   String?
+  endDate     String?
+  status      String        @default("planned") // "draft" | "planned" | "completed"
+  totalBudget Float?
+  currency    String        @default("TRY")
+  notes       String?
+  expenses    TripExpense[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model TripExpense {
+  id          String   @id @default(cuid())
+  tripId      String
+  trip        TripPlan @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  category    String
+  description String
+  amount      Float
+  currency    String   @default("TRY")
+  isPaid        Boolean  @default(false)
+  date          String?
+  savingsAmount Float    @default(0)   // estimated value of included services (TRY)
+  savingsNote   String?                // e.g. "Kahvaltı, Gym"
+  savingsData   String?                // JSON: {days, items:[{label,perDay,checked}]}
+  paymentMethod String   @default("nakit")  // "nakit" | "kredi kartı"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
 model MonthlyBudget {
   id            String   @id @default(cuid())
   year          Int

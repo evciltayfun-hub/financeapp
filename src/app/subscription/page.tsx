@@ -1,25 +1,36 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Pencil, Power, Plus, Tv, Cloud, Code2, ShieldCheck, Layers, Zap } from "lucide-react";
+import { Pencil, Power, Plus, Tv, Code2, ShieldCheck, Layers, Zap, BookOpen, Users, Dumbbell } from "lucide-react";
 import { usePrivacy } from "@/lib/privacy-context";
 import { cn } from "@/lib/utils";
 
 const HIDDEN = "••••••";
 
-const CATEGORIES = ["Streaming", "Yazılım/SaaS", "Bulut/Depolama", "Bireysel Emeklilik", "Utilities", "Diğer"] as const;
+const CATEGORIES = ["Streaming", "Yazılım/SaaS", "Kişisel Gelişim/Eğitim", "Sosyal Medya", "Spor/Beslenme", "Bireysel Emeklilik", "Utilities", "Diğer"] as const;
 type Category = (typeof CATEGORIES)[number];
 
 const CAT_CONFIG: Record<Category, { color: string; bg: string; icon: React.ReactNode }> = {
-  Streaming:            { color: "#60a5fa", bg: "rgba(96,165,250,0.12)",  icon: <Tv size={14} /> },
-  "Yazılım/SaaS":       { color: "#a78bfa", bg: "rgba(167,139,250,0.12)", icon: <Code2 size={14} /> },
-  "Bulut/Depolama":     { color: "#34d399", bg: "rgba(52,211,153,0.12)",  icon: <Cloud size={14} /> },
-  "Bireysel Emeklilik": { color: "#fbbf24", bg: "rgba(251,191,36,0.12)",  icon: <ShieldCheck size={14} /> },
-  Utilities:            { color: "#f87171", bg: "rgba(248,113,113,0.12)", icon: <Zap size={14} /> },
-  Diğer:                { color: "#9ca3af", bg: "rgba(156,163,175,0.12)", icon: <Layers size={14} /> },
+  Streaming:                { color: "#60a5fa", bg: "rgba(96,165,250,0.12)",   icon: <Tv size={14} /> },
+  "Yazılım/SaaS":           { color: "#a78bfa", bg: "rgba(167,139,250,0.12)",  icon: <Code2 size={14} /> },
+  "Kişisel Gelişim/Eğitim": { color: "#34d399", bg: "rgba(52,211,153,0.12)",   icon: <BookOpen size={14} /> },
+  "Sosyal Medya":           { color: "#f472b6", bg: "rgba(244,114,182,0.12)",  icon: <Users size={14} /> },
+  "Spor/Beslenme":          { color: "#fb923c", bg: "rgba(251,146,60,0.12)",   icon: <Dumbbell size={14} /> },
+  "Bireysel Emeklilik":     { color: "#fbbf24", bg: "rgba(251,191,36,0.12)",   icon: <ShieldCheck size={14} /> },
+  Utilities:                { color: "#f87171", bg: "rgba(248,113,113,0.12)",  icon: <Zap size={14} /> },
+  Diğer:                    { color: "#9ca3af", bg: "rgba(156,163,175,0.12)",  icon: <Layers size={14} /> },
 };
 
 const RATES: Record<string, number> = { "₺": 1, $: 44, "€": 48, "£": 56 };
+const COFFEE_PRICE = 200; // TL
+const COFFEE_EXCLUDED = ["Bireysel Emeklilik", "Utilities"];
+const COFFEE_EXCLUDED_KEYWORDS = ["Motorsiklet", "Poliçe"];
+const HISTORY_START_YM = 202601;
+
+function getStoredCoffees(ym: number): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(localStorage.getItem(`coffee_${ym}`) ?? "0");
+}
 
 type SortKey = "default" | "name" | "price_desc" | "price_asc";
 type PeriodFilter = "all" | "monthly" | "yearly";
@@ -67,12 +78,39 @@ export default function SubscriptionPage() {
   const [catFilter, setCatFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("default");
   const [onlyActive, setOnlyActive] = useState(false);
+  const [savedCoffees, setSavedCoffees] = useState(0);
+
+  const now = new Date();
+  const currentYM = now.getFullYear() * 100 + (now.getMonth() + 1);
+  const [viewYM, setViewYM] = useState(currentYM);
+
+  const viewYear = Math.floor(viewYM / 100);
+  const viewMonthIdx = (viewYM % 100) - 1; // 0-indexed
+  const daysInViewMonth = new Date(viewYear, viewMonthIdx + 1, 0).getDate();
+
+  function prevYM(ym: number) {
+    const m = ym % 100;
+    return m === 1 ? (Math.floor(ym / 100) - 1) * 100 + 12 : ym - 1;
+  }
+  function nextYM(ym: number) {
+    const m = ym % 100;
+    return m === 12 ? (Math.floor(ym / 100) + 1) * 100 + 1 : ym + 1;
+  }
 
   useEffect(() => {
     fetch("/api/subscriptions")
       .then((r) => r.json())
       .then((d) => { setSubs(d); setLoading(false); });
   }, []);
+
+  useEffect(() => {
+    setSavedCoffees(getStoredCoffees(viewYM));
+  }, [viewYM]);
+
+  function updateSaved(n: number) {
+    setSavedCoffees(n);
+    localStorage.setItem(`coffee_${viewYM}`, String(n));
+  }
 
   const toMonthlyTRY = (s: Sub) =>
     (s.period === "yearly" ? s.price / 12 : s.price) * (RATES[s.currency] ?? 1);
@@ -84,11 +122,47 @@ export default function SubscriptionPage() {
     .filter((s) => s.period === "monthly")
     .reduce((a, s) => a + toMonthlyTRY(s), 0);
 
-  const catTotals = activeSubs.reduce<Record<string, number>>((acc, s) => {
-    acc[s.category] = (acc[s.category] ?? 0) + toMonthlyTRY(s);
+  const coffeeBaseTotal = activeSubs
+    .filter((s) => !COFFEE_EXCLUDED.includes(s.category))
+    .filter((s) => !COFFEE_EXCLUDED_KEYWORDS.some((k) => s.name.includes(k)))
+    .reduce((a, s) => a + toMonthlyTRY(s), 0);
+  const totalSubCups = Math.ceil(coffeeBaseTotal / COFFEE_PRICE);
+  const savedTRY = savedCoffees * COFFEE_PRICE;
+
+  const historyMonths = useMemo(() => {
+    const list = [];
+    let ym = HISTORY_START_YM;
+    while (ym <= currentYM) {
+      const year = Math.floor(ym / 100);
+      const month = (ym % 100) - 1;
+      const days = new Date(year, month + 1, 0).getDate();
+      const saved = ym === viewYM ? savedCoffees : getStoredCoffees(ym);
+      list.push({ ym, month, year, saved, days, isCurrent: ym === currentYM, isView: ym === viewYM });
+      const m = ym % 100;
+      ym = m === 12 ? (Math.floor(ym / 100) + 1) * 100 + 1 : ym + 1;
+    }
+    return list;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedCoffees, viewYM]);
+
+  const toActualTRY = (s: Sub) => s.price * (RATES[s.currency] ?? 1);
+
+  const monthlySubs = activeSubs.filter((s) => s.period === "monthly");
+  const yearlySubs  = activeSubs.filter((s) => s.period === "yearly");
+
+  const monthlyCatTotals = monthlySubs.reduce<Record<string, number>>((acc, s) => {
+    acc[s.category] = (acc[s.category] ?? 0) + toActualTRY(s);
     return acc;
   }, {});
-  const maxCat = Math.max(...Object.values(catTotals), 1);
+  const yearlyCatTotals = yearlySubs.reduce<Record<string, number>>((acc, s) => {
+    acc[s.category] = (acc[s.category] ?? 0) + toActualTRY(s);
+    return acc;
+  }, {});
+
+  const monthlyGrandTotal = Object.values(monthlyCatTotals).reduce((a, b) => a + b, 0);
+  const yearlyGrandTotal  = Object.values(yearlyCatTotals).reduce((a, b) => a + b, 0);
+  const maxMonthlyCat = Math.max(...Object.values(monthlyCatTotals), 1);
+  const maxYearlyCat  = Math.max(...Object.values(yearlyCatTotals), 1);
 
   const filtered = useMemo(() => {
     let list = [...subs];
@@ -201,35 +275,219 @@ export default function SubscriptionPage() {
             </div>
           </div>
 
-          {/* Kategori dağılımı */}
-          {Object.keys(catTotals).length > 0 && (
-            <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4 space-y-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Kategori dağılımı</p>
-              {Object.entries(catTotals)
-                .sort((a, b) => b[1] - a[1])
-                .map(([cat, val]) => {
+          {/* Kategori dağılımı — aylık + yıllık */}
+          <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4 space-y-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ödeme Dağılımı</p>
+
+            {/* Aylık ödemeler */}
+            {Object.keys(monthlyCatTotals).length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[10px] font-semibold text-blue-400/70 uppercase tracking-wider">Aylık</p>
+                {Object.entries(monthlyCatTotals).sort((a, b) => b[1] - a[1]).map(([cat, val]) => {
                   const cfg = CAT_CONFIG[cat as Category] ?? CAT_CONFIG["Diğer"];
-                  const pct = Math.round((val / maxCat) * 100);
                   return (
                     <div key={cat}>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-1.5">
                           <span style={{ color: cfg.color }}>{cfg.icon}</span>
-                          <span className="text-xs text-muted-foreground truncate max-w-[110px]">{cat}</span>
+                          <span className="text-xs text-muted-foreground truncate max-w-[100px]">{cat}</span>
                         </div>
                         <span className="text-xs tabular-nums text-muted-foreground">{H(fmtTRY(val))}</span>
                       </div>
-                      <div className="bg-white/5 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{ width: `${pct}%`, background: cfg.color }}
-                        />
+                      <div className="bg-white/5 rounded-full h-1 overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${Math.round((val / maxMonthlyCat) * 100)}%`, background: cfg.color }} />
                       </div>
                     </div>
                   );
                 })}
+                <div className="flex justify-between items-center pt-1 border-t border-white/6">
+                  <span className="text-[10px] text-muted-foreground/60">Aylık toplam</span>
+                  <span className="text-sm font-bold tabular-nums">{H(fmtTRY(monthlyGrandTotal))}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Yıllık ödemeler (tek seferlik) */}
+            {Object.keys(yearlyCatTotals).length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-white/6">
+                <p className="text-[10px] font-semibold text-amber-400/70 uppercase tracking-wider">Yıllık (tek ödeme)</p>
+                {Object.entries(yearlyCatTotals).sort((a, b) => b[1] - a[1]).map(([cat, val]) => {
+                  const cfg = CAT_CONFIG[cat as Category] ?? CAT_CONFIG["Diğer"];
+                  return (
+                    <div key={cat}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <span style={{ color: cfg.color }}>{cfg.icon}</span>
+                          <span className="text-xs text-muted-foreground truncate max-w-[100px]">{cat}</span>
+                        </div>
+                        <span className="text-xs tabular-nums text-muted-foreground">{H(fmtTRY(val))}</span>
+                      </div>
+                      <div className="bg-white/5 rounded-full h-1 overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${Math.round((val / maxYearlyCat) * 100)}%`, background: cfg.color }} />
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="flex justify-between items-center pt-1 border-t border-white/6">
+                  <span className="text-[10px] text-muted-foreground/60">Yıllık toplam</span>
+                  <span className="text-sm font-bold tabular-nums">{H(fmtTRY(yearlyGrandTotal))}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Genel toplam */}
+            <div className="space-y-1.5 pt-2 border-t border-white/6">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Aylık × 12</span>
+                <span className="tabular-nums text-muted-foreground">{H(fmtTRY(monthlyGrandTotal * 12))}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Yıllık (tek ödemeler)</span>
+                <span className="tabular-nums text-muted-foreground">{H(fmtTRY(yearlyGrandTotal))}</span>
+              </div>
+              <div className="flex justify-between text-sm font-bold pt-1 border-t border-white/6">
+                <span>Genel yıllık</span>
+                <span className="tabular-nums">{H(fmtTRY(monthlyGrandTotal * 12 + yearlyGrandTotal))}</span>
+              </div>
             </div>
-          )}
+          </div>
+          {/* Kahve Hesabı */}
+          <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4 space-y-3">
+            {/* Başlık + navigasyon */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">☕ Kahve Hesabı</p>
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => viewYM > HISTORY_START_YM && setViewYM(prevYM(viewYM))}
+                  disabled={viewYM <= HISTORY_START_YM}
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-white/8 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                >‹</button>
+                <span className="text-xs font-semibold">
+                  {MONTHS[viewMonthIdx]} {viewYear}
+                  {viewYM === currentYM && <span className="ml-1.5 text-[9px] text-amber-400/70 font-normal">bu ay</span>}
+                </span>
+                <button
+                  onClick={() => viewYM < currentYM && setViewYM(nextYM(viewYM))}
+                  disabled={viewYM >= currentYM}
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-white/8 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                >›</button>
+              </div>
+              <p className="text-[10px] text-muted-foreground/50 mt-1.5 text-center">
+                1 ☕ = ₺{COFFEE_PRICE} · Bu ay içmediğin kahveleri seç ({daysInViewMonth} gün)
+              </p>
+            </div>
+
+            {/* İnteraktif kahve seçici — gün sayısı kadar kupa */}
+            <div className="flex flex-wrap gap-1">
+              {Array.from({ length: daysInViewMonth }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => updateSaved(savedCoffees === i + 1 ? 0 : i + 1)}
+                  title={`${i + 1} kahve = ${fmtTRY((i + 1) * COFFEE_PRICE)}`}
+                  className={cn(
+                    "text-sm leading-none transition-all hover:scale-125 active:scale-110",
+                    i < savedCoffees ? "opacity-100 drop-shadow-[0_0_4px_rgba(251,191,36,0.8)]" : "opacity-20 hover:opacity-60"
+                  )}
+                >
+                  ☕
+                </button>
+              ))}
+            </div>
+
+            {/* İstatistikler */}
+            <div className="space-y-2 pt-2 border-t border-white/6">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Abonelikler (baz)</span>
+                <span className="tabular-nums">{totalSubCups} ☕ = {H(fmtTRY(coffeeBaseTotal))}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">İçmediğin</span>
+                <span className={cn("tabular-nums font-medium", savedCoffees > 0 ? "text-amber-400" : "text-muted-foreground/50")}>
+                  {savedCoffees} ☕ = {H(fmtTRY(savedTRY))}
+                </span>
+              </div>
+              {savedCoffees > 0 && (
+                <>
+                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min(100, Math.round((savedTRY / coffeeBaseTotal) * 100))}%`,
+                        background: savedTRY >= coffeeBaseTotal ? "#4ade80" : "#fbbf24",
+                      }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-center font-medium" style={{ color: savedTRY >= coffeeBaseTotal ? "#4ade80" : "#fbbf24" }}>
+                    {savedTRY >= coffeeBaseTotal
+                      ? `Tüm abonelikleri karşıladın! 🎉`
+                      : `Aboneliklerin %${Math.round((savedTRY / coffeeBaseTotal) * 100)}'ini karşıladın`}
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Aylık geçmiş — Oca 2026'dan itibaren */}
+            <div className="pt-2 border-t border-white/6 space-y-1">
+              <p className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-2">Aylara Göre</p>
+              {historyMonths.map(({ ym, month, year, saved, days, isCurrent, isView }) => {
+                const pct = totalSubCups > 0 ? Math.min(100, Math.round((saved / totalSubCups) * 100)) : 0;
+                const isCurrentYear = year === now.getFullYear();
+                const barColor = saved >= totalSubCups ? "#4ade80" : isView ? "#fbbf24" : "#60a5fa";
+                return (
+                  <button
+                    key={ym}
+                    onClick={() => setViewYM(ym)}
+                    className={cn(
+                      "w-full flex items-center gap-2 rounded-md px-1 py-0.5 transition-colors",
+                      isView ? "bg-white/6" : "hover:bg-white/4",
+                      !isCurrent && !isView && "opacity-60"
+                    )}
+                  >
+                    <span className="text-[10px] w-10 shrink-0 text-left text-muted-foreground">
+                      {MONTHS[month].slice(0, 3)}{!isCurrentYear && ` '${String(year).slice(2)}`}
+                    </span>
+                    <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%`, background: barColor }}
+                      />
+                    </div>
+                    <span className="text-[10px] tabular-nums text-muted-foreground w-10 text-right shrink-0">
+                      {saved > 0 ? `${saved}/${days}` : "—"}
+                    </span>
+                    {pct > 0 && (
+                      <span className="text-[10px] tabular-nums w-6 text-right shrink-0" style={{ color: barColor }}>
+                        %{pct}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Baz notları */}
+            <div className="rounded-lg bg-white/4 border border-white/6 px-3 py-2 space-y-1">
+              <p className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider mb-1.5">Baz hesabına dahil değil</p>
+              <p className="text-[10px] text-muted-foreground/50 flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-yellow-400/50 shrink-0 inline-block" />
+                Bireysel Emeklilik <span className="text-muted-foreground/30">(kategori)</span>
+              </p>
+              <p className="text-[10px] text-muted-foreground/50 flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-red-400/50 shrink-0 inline-block" />
+                Utilities <span className="text-muted-foreground/30">(kategori)</span>
+              </p>
+              <p className="text-[10px] text-muted-foreground/50 flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-white/30 shrink-0 inline-block" />
+                Motorsiklet içeren abonelikler
+              </p>
+              <p className="text-[10px] text-muted-foreground/50 flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-white/30 shrink-0 inline-block" />
+                Poliçe içeren abonelikler
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* SAĞ: filtreler + liste */}
@@ -293,6 +551,8 @@ export default function SubscriptionPage() {
             {filtered.map((s) => {
               const cfg = CAT_CONFIG[s.category as Category] ?? CAT_CONFIG["Diğer"];
               const monthlyTRY = toMonthlyTRY(s);
+              const cups = Math.ceil(monthlyTRY / COFFEE_PRICE);
+              const displayCups = Math.min(cups, 10);
               return (
                 <div
                   key={s.id}
@@ -325,6 +585,9 @@ export default function SubscriptionPage() {
                     {s.period === "yearly" && (
                       <p className="text-xs text-muted-foreground tabular-nums">{H(fmtTRY(monthlyTRY))}/ay</p>
                     )}
+                    <p className="text-[11px] text-amber-400/60 mt-0.5 tracking-wide">
+                      {"☕".repeat(displayCups)}{cups > 10 ? ` +${cups - 10}` : ""}
+                    </p>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => openEdit(s)} title="Düzenle" className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/8 transition-colors">

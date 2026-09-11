@@ -47,28 +47,12 @@ const typeBg: Record<AssetType, string> = {
   CRYPTO: "bg-orange-500/15 text-orange-300",
 };
 
-function toYahooSymbol(symbol: string, type: AssetType): string {
-  if (type === "BIST") return `${symbol}.IS`;
-  if (type === "CRYPTO") {
-    const s = symbol.toUpperCase();
-    if (s.endsWith("USDT")) return `${s.slice(0, -4)}-USD`;
-    if (s.endsWith("USD"))  return `${s.slice(0, -3)}-USD`;
-    return `${s}-USD`;
-  }
-  return symbol;
-}
-
-async function fetchPrevClose(yahooSymbol: string): Promise<number | null> {
+async function fetchPrevClose(symbol: string, type: AssetType): Promise<number | null> {
   try {
-    const res = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1d&range=5d`,
-      { headers: { "User-Agent": "Mozilla/5.0" } }
-    );
+    const res = await fetch(`/api/chart?symbol=${encodeURIComponent(symbol)}&type=${type}&period=5G`);
     if (!res.ok) return null;
-    const data = await res.json();
-    const closes: number[] = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close ?? [];
-    const valid = closes.filter((c) => c != null && !isNaN(c));
-    return valid.length >= 2 ? valid[valid.length - 2] : null;
+    const points: ChartPoint[] = await res.json();
+    return points.length >= 2 ? points[points.length - 2].close : null;
   } catch { return null; }
 }
 
@@ -158,25 +142,37 @@ function makeCandleShape(domainMin: number, upColor: string) {
   };
 }
 
-function MarketBar({ items }: { items: MarketItem[] }) {
+function MarketBar({ items, onSelect, selected }: { items: MarketItem[]; onSelect: (item: MarketItem) => void; selected: MarketItem | null }) {
   return (
-    <div className="grid grid-cols-8 gap-2 mb-5">
-      {items.map((item) => (
-        <div key={item.symbol} className="rounded-xl border border-white/8 bg-[oklch(0.26_0_0)] px-3 py-2.5 flex flex-col gap-0.5">
-          <div className="flex items-center justify-between gap-1">
-            <span className="text-[10px] text-white/35 uppercase tracking-wider font-medium">{item.label}</span>
-            <span className="text-[9px] text-white/20 font-medium">{item.unit}</span>
-          </div>
-          <div className="text-sm font-bold text-white tabular-nums">
-            {item.price != null ? fmtMarketPrice(item.price) : <span className="text-white/25">—</span>}
-          </div>
-          {item.pct != null && (
-            <div className={cn("text-[11px] font-semibold tabular-nums", item.pct >= 0 ? "text-green-400" : "text-red-400")}>
-              {item.pct >= 0 ? "+" : ""}{item.pct.toFixed(2)}%
+    <div className="grid grid-cols-8 gap-2 mt-5">
+      {items.map((item) => {
+        const isActive = selected?.symbol === item.symbol;
+        return (
+          <button
+            key={item.symbol}
+            onClick={() => onSelect(item)}
+            className={cn(
+              "rounded-xl border px-3 py-2.5 flex flex-col gap-0.5 text-left transition-all",
+              isActive
+                ? "border-white/20 bg-white/8 ring-1 ring-white/10"
+                : "border-white/8 bg-[oklch(0.26_0_0)] hover:bg-white/5 hover:border-white/12"
+            )}
+          >
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[10px] text-white/35 uppercase tracking-wider font-medium">{item.label}</span>
+              <span className="text-[9px] text-white/20 font-medium">{item.unit}</span>
             </div>
-          )}
-        </div>
-      ))}
+            <div className="text-sm font-bold text-white tabular-nums">
+              {item.price != null ? fmtMarketPrice(item.price) : <span className="text-white/25">—</span>}
+            </div>
+            {item.pct != null && (
+              <div className={cn("text-[11px] font-semibold tabular-nums", item.pct >= 0 ? "text-green-400" : "text-red-400")}>
+                {item.pct >= 0 ? "+" : ""}{item.pct.toFixed(2)}%
+              </div>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -254,6 +250,15 @@ export default function WatchlistPage() {
   const [zoomStart, setZoomStart]       = useState(0);
   const [zoomEnd, setZoomEnd]           = useState(0);
 
+  // Market chart state
+  const [selectedMarket, setSelectedMarket]         = useState<MarketItem | null>(null);
+  const [marketChart, setMarketChart]               = useState<ChartPoint[]>([]);
+  const [marketChartLoading, setMarketChartLoading] = useState(false);
+  const [marketPeriod, setMarketPeriod]             = useState<Period>("1Y");
+  const [marketZoomStart, setMarketZoomStart]       = useState(0);
+  const [marketZoomEnd, setMarketZoomEnd]           = useState(0);
+  const marketCacheRef = useRef<Record<string, Record<string, ChartPoint[]>>>({});
+
   const loadPrices = useCallback(async (list: Asset[]) => {
     if (!list.length) return;
     const priceRes = await fetch("/api/prices", {
@@ -263,7 +268,7 @@ export default function WatchlistPage() {
     });
     const priceData = await priceRes.json();
     const prevCloses = await Promise.all(
-      list.map(async (a) => ({ symbol: a.symbol, prev: await fetchPrevClose(toYahooSymbol(a.symbol, a.type)) }))
+      list.map(async (a) => ({ symbol: a.symbol, prev: await fetchPrevClose(a.symbol, a.type) }))
     );
     const prevMap: Record<string, number | null> = {};
     for (const { symbol, prev } of prevCloses) prevMap[symbol] = prev;
@@ -301,6 +306,35 @@ export default function WatchlistPage() {
     finally { setNewsLoading(false); }
   }, []);
 
+  const fetchMarketChart = useCallback(async (item: MarketItem, p: Period) => {
+    if (marketCacheRef.current[item.symbol]?.[p]) {
+      setMarketChart(marketCacheRef.current[item.symbol][p]);
+      return;
+    }
+    setMarketChartLoading(true);
+    try {
+      const res = await fetch(`/api/chart?symbol=${encodeURIComponent(item.symbol)}&type=MARKET&period=${p}`);
+      const points: ChartPoint[] = await res.json();
+      marketCacheRef.current = {
+        ...marketCacheRef.current,
+        [item.symbol]: { ...(marketCacheRef.current[item.symbol] ?? {}), [p]: points },
+      };
+      setMarketChart(points);
+    } finally {
+      setMarketChartLoading(false);
+    }
+  }, []);
+
+  function handleMarketClick(item: MarketItem) {
+    if (selectedMarket?.symbol === item.symbol) {
+      setSelectedMarket(null);
+      setMarketChart([]);
+    } else {
+      setSelectedMarket(item);
+      fetchMarketChart(item, marketPeriod);
+    }
+  }
+
   const loadData = useCallback(async () => {
     const res = await fetch("/api/assets");
     const data = await res.json();
@@ -322,6 +356,8 @@ export default function WatchlistPage() {
 
   useEffect(() => { loadData().finally(() => setLoading(false)); }, [loadData]);
   useEffect(() => { if (selected) { fetchChart(selected, period); fetchNews(selected.symbol, selected.type); } }, [selected, period, fetchChart, fetchNews]);
+  useEffect(() => { if (selectedMarket) fetchMarketChart(selectedMarket, marketPeriod); }, [marketPeriod, selectedMarket, fetchMarketChart]);
+  useEffect(() => { if (marketChart.length > 0) { setMarketZoomStart(0); setMarketZoomEnd(marketChart.length - 1); } }, [marketChart.length]);
 
   // Reset zoom when chart data changes
   const selChart = selected ? (chartCache[selected.symbol]?.[period] ?? []) : [];
@@ -420,13 +456,87 @@ export default function WatchlistPage() {
         </div>
       </div>
 
-      {/* Market Overview Bar */}
+      {/* Market Overview Bar — top */}
       {marketLoading ? (
-        <div className="grid grid-cols-5 gap-2 mb-5">
-          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+        <div className="grid grid-cols-8 gap-2 mb-5">
+          {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
         </div>
       ) : (
-        <MarketBar items={market} />
+        <MarketBar items={market} onSelect={handleMarketClick} selected={selectedMarket} />
+      )}
+
+      {!selectedMarket && <div className="mb-5" />}
+
+      {/* Market Chart Panel — right below market bar */}
+      {selectedMarket && (
+        <div className="mt-4 mb-4 rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-5">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-xl font-bold text-white">{selectedMarket.label}</h3>
+                <span className="text-xs text-white/30 font-medium">{selectedMarket.unit}</span>
+              </div>
+              <div className="text-2xl font-bold tabular-nums text-white">
+                {selectedMarket.price != null ? fmtMarketPrice(selectedMarket.price) : "—"}
+              </div>
+              {selectedMarket.pct != null && (
+                <div className={cn("text-sm font-semibold tabular-nums mt-0.5", selectedMarket.pct >= 0 ? "text-green-400" : "text-red-400")}>
+                  {selectedMarket.pct >= 0 ? "+" : ""}{selectedMarket.pct.toFixed(2)}%
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 p-1 rounded-lg bg-white/5">
+                {PERIODS.map((p) => (
+                  <button key={p.value} onClick={() => setMarketPeriod(p.value)} className={cn("px-3 py-1.5 rounded-md text-xs font-semibold transition-all", marketPeriod === p.value ? "bg-white/15 text-white" : "text-white/40 hover:text-white/70")}>
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1">
+                <button onClick={() => { const s=marketZoomEnd-marketZoomStart; if(s<=5)return; const c=Math.round((marketZoomStart+marketZoomEnd)/2); const ns=Math.max(5,Math.round(s/1.6)); setMarketZoomStart(Math.max(0,c-Math.round(ns/2))); setMarketZoomEnd(Math.min(marketChart.length-1,c+Math.round(ns/2))); }} className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/70 transition-colors"><ZoomIn size={13}/></button>
+                <button onClick={() => { const s=marketZoomEnd-marketZoomStart; const c=Math.round((marketZoomStart+marketZoomEnd)/2); const ns=Math.min(marketChart.length-1,Math.round(s*1.6)); setMarketZoomStart(Math.max(0,c-Math.round(ns/2))); setMarketZoomEnd(Math.min(marketChart.length-1,c+Math.round(ns/2))); }} className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/70 transition-colors"><ZoomOut size={13}/></button>
+                <button onClick={() => { setMarketZoomStart(0); setMarketZoomEnd(marketChart.length-1); }} className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/35 hover:text-white/60 transition-colors text-[10px] font-medium">Tümü</button>
+                <button onClick={() => { setSelectedMarket(null); setMarketChart([]); }} className="px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 transition-colors text-[10px] font-medium">✕ Kapat</button>
+              </div>
+            </div>
+          </div>
+          {marketChartLoading ? (
+            <div className="h-[240px] flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-white/15 border-t-white/50 rounded-full animate-spin" />
+            </div>
+          ) : marketChart.length > 1 ? (() => {
+            const mMin = Math.min(...marketChart.map(p => p.low)) * 0.993;
+            const mMax = Math.max(...marketChart.map(p => p.high)) * 1.007;
+            const mShape = makeCandleShape(mMin, "#94a3b8");
+            const mVisible = marketChart.slice(marketZoomStart, marketZoomEnd + 1);
+            const mHigh = mVisible.length ? Math.max(...mVisible.map(p => p.high)) : 0;
+            const mLow  = mVisible.length ? Math.min(...mVisible.map(p => p.low))  : 0;
+            return (
+              <>
+                <div className="h-[240px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={marketChart} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barCategoryGap="20%">
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: "rgba(255,255,255,0.30)" }} tickLine={false} axisLine={false} interval={Math.floor(marketChart.length / 6)} tickFormatter={xTickFormatter} />
+                      <YAxis domain={[mMin, mMax]} tick={{ fontSize: 10, fill: "rgba(255,255,255,0.30)" }} tickLine={false} axisLine={false} width={72} tickFormatter={(v: number) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v.toFixed(2)} />
+                      <Tooltip content={<CandleTooltip period={marketPeriod} />} cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }} />
+                      <Bar dataKey="close" shape={mShape} maxBarSize={16} isAnimationActive={false} />
+                      <Brush dataKey="date" height={22} stroke="rgba(255,255,255,0.10)" fill="rgba(255,255,255,0.03)" travellerWidth={6} tickFormatter={xTickFormatter} startIndex={marketZoomStart} endIndex={marketZoomEnd} onChange={(range) => { if (range.startIndex !== undefined && range.endIndex !== undefined) { setMarketZoomStart(range.startIndex); setMarketZoomEnd(range.endIndex); } }} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-white/8">
+                  <div><div className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Dönem Yüksek</div><div className="text-sm font-semibold text-green-400 tabular-nums">{fmtMarketPrice(mHigh)}</div></div>
+                  <div><div className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Dönem Düşük</div><div className="text-sm font-semibold text-red-400 tabular-nums">{fmtMarketPrice(mLow)}</div></div>
+                  <div><div className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Tarih Aralığı</div><div className="text-xs text-white/45 tabular-nums">{mVisible.length >= 2 ? `${mVisible[0].date.slice(0,10)} — ${mVisible[mVisible.length-1].date.slice(0,10)}` : ""}</div></div>
+                </div>
+              </>
+            );
+          })() : (
+            <div className="h-[240px] flex items-center justify-center text-white/25 text-sm">Grafik verisi yükleniyor…</div>
+          )}
+        </div>
       )}
 
       {loading ? (
@@ -679,6 +789,7 @@ export default function WatchlistPage() {
           )}
         </div>
       )}
+
     </div>
   );
 }

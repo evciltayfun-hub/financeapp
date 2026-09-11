@@ -261,40 +261,26 @@ export default function BudgetPage() {
         </div>
       </div>
 
-      {/* Legend: yearly subs */}
-      {yearlySubs.length > 0 && (
-        <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-            Yıllık abonelikler — ödeme ayı ataması
-          </p>
-          <p className="text-xs text-muted-foreground mb-3">
-            Yıllık aboneliklerinizin ödeme aylarını Abonelikler sayfasından ayarlayabilirsiniz.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {yearlySubs.map((s) => (
-              <span key={s.id} className="text-xs px-2.5 py-1 rounded-lg bg-white/6 text-white/70 flex items-center gap-1.5">
-                <span>{s.name}</span>
-                <span className="text-white/30">·</span>
-                <span className={s.paymentMonth ? "text-amber-400" : "text-white/30"}>
-                  {s.paymentMonth ? MONTHS[s.paymentMonth - 1] : "Ay seçilmedi"}
-                </span>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Main table */}
       <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/8">
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Ay</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Önceki Aydan Devir</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Net Maaş</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Devir
+                <div className="text-[9px] font-normal normal-case tracking-normal text-muted-foreground/40 mt-0.5">önceki aydan artan</div>
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Hesaba Yatan
+                <div className="text-[9px] font-normal normal-case tracking-normal text-muted-foreground/40 mt-0.5">geçen ay kazanılan</div>
+              </th>
               <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Ek Gelir</th>
               <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Abonelikler</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Diğer Ödemeler</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Diğer Ödemeler
+                <div className="text-[9px] font-normal normal-case tracking-normal text-muted-foreground/40 mt-0.5">k.kartı, taksit, kredi vb.</div>
+              </th>
               <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Yatırıma Aktarılacak</th>
               <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Net Kalan</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Notlar</th>
@@ -353,7 +339,7 @@ export default function BudgetPage() {
                     onSave={(v) => updateBudget(month, "carryover", v)}
                   />
 
-                  {/* Net Maaş */}
+                  {/* Hesaba Yatan */}
                   <EditableCell
                     value={salary}
                     onSave={(v) => updateBudget(month, "salary", v)}
@@ -435,6 +421,29 @@ export default function BudgetPage() {
           </tfoot>
         </table>
       </div>
+
+      {/* Legend: yearly subs — bottom */}
+      {yearlySubs.length > 0 && (
+        <div className="rounded-xl border border-white/8 bg-[oklch(0.28_0_0)] p-4">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+            Yıllık abonelikler — ödeme ayı ataması
+          </p>
+          <p className="text-xs text-muted-foreground mb-3">
+            Yıllık aboneliklerinizin ödeme aylarını Abonelikler sayfasından ayarlayabilirsiniz.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {yearlySubs.map((s) => (
+              <span key={s.id} className="text-xs px-2.5 py-1 rounded-lg bg-white/6 text-white/70 flex items-center gap-1.5">
+                <span>{s.name}</span>
+                <span className="text-white/30">·</span>
+                <span className={s.paymentMonth ? "text-amber-400" : "text-white/30"}>
+                  {s.paymentMonth ? MONTHS[s.paymentMonth - 1] : "Ay seçilmedi"}
+                </span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
     </div>
   );
