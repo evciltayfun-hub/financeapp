@@ -1,13 +1,14 @@
 // Download a full data snapshot from the live site into a dated JSON file.
 // Usage: railway run node scripts/backup.js   (IMPORT_SECRET comes from Railway variables)
-// Optional env: RAILWAY_URL (default: live domain), BACKUP_DIR (default: ~/Documents/FinanceApp-Yedek), KEEP (default: 30)
+// Optional env: RAILWAY_URL (default: live domain), BACKUP_DIR (default: iCloud Drive/FinanceApp-Yedek), KEEP (default: 30)
+// Default dir is under iCloud Drive rather than ~/Documents: launchd jobs can't write to Documents (macOS TCC).
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
 const RAILWAY_URL = (process.env.RAILWAY_URL || "https://lifeoftufao.up.railway.app").replace(/\/$/, "");
 const IMPORT_SECRET = process.env.IMPORT_SECRET;
-const BACKUP_DIR = process.env.BACKUP_DIR || path.join(os.homedir(), "Documents", "FinanceApp-Yedek");
+const BACKUP_DIR = process.env.BACKUP_DIR || path.join(os.homedir(), "Library", "Mobile Documents", "com~apple~CloudDocs", "FinanceApp-Yedek");
 const KEEP = parseInt(process.env.KEEP || "30", 10);
 
 const stamp = new Date().toISOString().slice(0, 10);
