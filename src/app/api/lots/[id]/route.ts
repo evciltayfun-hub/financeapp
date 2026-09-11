@@ -21,7 +21,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { quantity, costPriceTL, costPriceUSD, purchaseDate, note } = body;
+    const { quantity, costPriceTL, costPriceUSD, purchaseDate, note, splitsAppliedThrough } = body;
 
     const lot = await prisma.lot.update({
       where: { id },
@@ -31,6 +31,7 @@ export async function PATCH(
         ...(costPriceUSD !== undefined && { costPriceUSD: costPriceUSD ? parseFloat(costPriceUSD) : null }),
         ...(purchaseDate !== undefined && { purchaseDate: new Date(purchaseDate) }),
         ...(note !== undefined && { note }),
+        ...(splitsAppliedThrough !== undefined && { splitsAppliedThrough: splitsAppliedThrough ? new Date(splitsAppliedThrough) : null }),
       },
     });
 

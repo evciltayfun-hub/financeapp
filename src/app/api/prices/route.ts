@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { PriceData, SplitEvent } from "@/lib/types";
 
-interface PriceResult {
-  symbol: string;
-  price: number | null;
-  currency: string;
-}
+interface YahooQuote { price: number | null; splits: SplitEvent[] }
+interface YahooSplit { date: number; splitRatio: string; numerator: number; denominator: number }
 
-async function fetchYahooPrice(symbol: string): Promise<number | null> {
+// A 2-year weekly window keeps the payload small while still carrying split events.
+async function fetchYahooQuote(symbol: string): Promise<YahooQuote> {
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1wk&range=2y&events=splits`;
     const res = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -16,13 +15,28 @@ async function fetchYahooPrice(symbol: string): Promise<number | null> {
       },
       next: { revalidate: 0 },
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { price: null, splits: [] };
     const data = await res.json();
-    const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-    return typeof price === "number" ? price : null;
+    const result = data?.chart?.result?.[0];
+    const price = result?.meta?.regularMarketPrice;
+    const rawSplits: YahooSplit[] = Object.values(result?.events?.splits ?? {});
+    const splits: SplitEvent[] = rawSplits
+      .filter((s) => s.numerator > 0 && s.denominator > 0)
+      .map((s) => ({
+        date: new Date(s.date * 1000).toISOString().slice(0, 10),
+        ratio: s.splitRatio,
+        numerator: s.numerator,
+        denominator: s.denominator,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    return { price: typeof price === "number" ? price : null, splits };
   } catch {
-    return null;
+    return { price: null, splits: [] };
   }
+}
+
+async function fetchYahooPrice(symbol: string): Promise<number | null> {
+  return (await fetchYahooQuote(symbol)).price;
 }
 
 async function fetchCoinGeckoPrice(coinId: string): Promise<number | null> {
@@ -76,20 +90,19 @@ export async function POST(req: NextRequest) {
 
     const [results, usdTryPrice] = await Promise.all([
       Promise.all(
-        assets.map(async ({ symbol, type }: { symbol: string; type: string }) => {
-          let price: number | null = null;
-          let currency = "TRY";
+        assets.map(async ({ symbol, type }: { symbol: string; type: string }): Promise<PriceData> => {
           if (type === "BIST") {
-            price = await fetchYahooPrice(`${symbol}.IS`);
-            currency = "TRY";
-          } else if (type === "US") {
-            price = await fetchYahooPrice(symbol);
-            currency = "USD";
-          } else if (type === "CRYPTO") {
-            price = await fetchCryptoPrice(symbol);
-            currency = "USD";
+            const q = await fetchYahooQuote(`${symbol}.IS`);
+            return { symbol, price: q.price, currency: "TRY", splits: q.splits };
           }
-          return { symbol, price, currency } as PriceResult;
+          if (type === "US") {
+            const q = await fetchYahooQuote(symbol);
+            return { symbol, price: q.price, currency: "USD", splits: q.splits };
+          }
+          if (type === "CRYPTO") {
+            return { symbol, price: await fetchCryptoPrice(symbol), currency: "USD", splits: [] };
+          }
+          return { symbol, price: null, currency: "TRY", splits: [] };
         })
       ),
       fetchYahooPrice("USDTRY=X"),

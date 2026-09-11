@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Fragment } from "react";
-import { Asset, PriceData, AssetWithPrice, Lot } from "@/lib/types";
+import { Asset, PriceData, AssetWithPrice, Lot, SplitEvent } from "@/lib/types";
 import { computeAssetWithPrice, formatCurrency, formatPercent, formatNumber } from "@/lib/utils";
 import { RefreshCw, Trash2, PlusCircle, ChevronDown, ChevronRight, Wallet, ArrowUpDown, ArrowUp, ArrowDown, StickyNote, Send, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -80,6 +80,48 @@ export default function PortfolioPage() {
       setRefreshing(false);
     }
   }, []);
+
+  // Splits that happened after a lot was bought and haven't been reflected in it yet
+  const pendingSplits = (asset: Asset): SplitEvent[] => {
+    const splits = priceMap[asset.symbol]?.splits ?? [];
+    if (splits.length === 0) return [];
+    return splits.filter((s) =>
+      asset.lots.some((lot) => {
+        const bought = lot.purchaseDate.slice(0, 10);
+        const applied = lot.splitsAppliedThrough?.slice(0, 10) ?? "";
+        return s.date > bought && s.date > applied;
+      })
+    );
+  };
+
+  const resolveSplit = async (asset: Asset, split: SplitEvent, mode: "apply" | "ignore") => {
+    const factor = split.numerator / split.denominator;
+    const affected = asset.lots.filter((lot) => {
+      const bought = lot.purchaseDate.slice(0, 10);
+      const applied = lot.splitsAppliedThrough?.slice(0, 10) ?? "";
+      return split.date > bought && split.date > applied;
+    });
+    try {
+      const responses = await Promise.all(affected.map((lot) => {
+        const body: Record<string, unknown> = { splitsAppliedThrough: split.date };
+        if (mode === "apply") {
+          body.quantity = lot.quantity * factor;
+          if (lot.costPriceUSD != null) body.costPriceUSD = lot.costPriceUSD / factor;
+          if (lot.costPriceTL != null) body.costPriceTL = lot.costPriceTL / factor;
+        }
+        return fetch(`/api/lots/${lot.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      }));
+      if (responses.some((r) => !r.ok)) throw new Error("lot update failed");
+      await loadAssets();
+      toast.success(mode === "apply" ? `${asset.symbol}: ${split.ratio} bölünme uygulandı` : `${asset.symbol}: bölünme yok sayıldı`);
+    } catch {
+      toast.error("Bölünme işlenemedi");
+    }
+  };
 
   const loadCash = useCallback(async () => {
     const res = await fetch("/api/cash");
@@ -337,6 +379,21 @@ export default function PortfolioPage() {
                   <div>
                     <p className="font-bold">{asset.symbol}</p>
                     <p className="text-xs text-muted-foreground">{asset.name}</p>
+                    {pendingSplits(asset).map((split) => (
+                      <div key={split.date} className="mt-1 flex items-center gap-1.5 text-xs" onClick={(e) => e.stopPropagation()}>
+                        <span className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 font-medium text-amber-400">
+                          ⚠ {split.ratio} bölünme · {new Date(split.date + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                        <button type="button" onClick={() => resolveSplit(asset, split, "apply")}
+                          className="rounded bg-amber-500/20 px-1.5 py-0.5 font-medium text-amber-300 hover:bg-amber-500/30 transition-colors">
+                          Uygula
+                        </button>
+                        <button type="button" onClick={() => resolveSplit(asset, split, "ignore")}
+                          className="rounded px-1.5 py-0.5 text-muted-foreground hover:text-foreground transition-colors">
+                          Yoksay
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </TableCell>
                 <TableCell>

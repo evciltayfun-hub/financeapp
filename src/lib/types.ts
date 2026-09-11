@@ -8,6 +8,7 @@ export interface Lot {
   costPriceUSD: number | null;
   purchaseDate: string;
   note: string | null;
+  splitsAppliedThrough: string | null;
 }
 
 export interface Asset {
@@ -18,10 +19,18 @@ export interface Asset {
   lots: Lot[];
 }
 
+export interface SplitEvent {
+  date: string;        // YYYY-MM-DD
+  ratio: string;       // e.g. "4:1"
+  numerator: number;
+  denominator: number;
+}
+
 export interface PriceData {
   symbol: string;
   price: number | null;
   currency: string;
+  splits?: SplitEvent[];
 }
 
 export interface MonthlyGoal {

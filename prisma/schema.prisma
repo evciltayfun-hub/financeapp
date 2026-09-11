@@ -28,6 +28,7 @@ model Lot {
   costPriceUSD Float?
   purchaseDate DateTime @default(now())
   note         String?
+  splitsAppliedThrough DateTime?  // corporate actions (splits) up to this date are reflected in quantity/cost
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
